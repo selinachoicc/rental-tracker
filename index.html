@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--nv:#1B1F4B;--nvl:#2D3270;--nvp:#dde0f5;--dng:#C0392B;--suc:#1a6b3a;--bg:#eeeef8;--border:#9496b8;--txt:#0a0a1a;--txt2:#2a2a3a;--txt3:#5a5a78;--radius:12px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14px;min-height:100vh}
+.app{max-width:860px;margin:0 auto;padding:20px 16px}
+.topbar{background:var(--nv);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.topbar-title{color:#fff;font-size:18px;font-weight:700}
+.topbar-badge{background:rgba(255,255,255,.2);color:#fff;font-size:12px;padding:4px 12px;border-radius:999px}
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tab{padding:8px 18px;border:2px solid var(--nv);border-radius:8px;background:#ffffff;cursor:pointer;font-size:13px;color:var(--nv);font-weight:700;font-family:var(--font)}
+.tab.on{background:var(--nv);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:#ffffff;border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.stat-l{font-size:11px;color:var(--txt2);font-weight:600;margin-bottom:4px}
+.stat-v{font-size:22px;font-weight:700;color:var(--txt)}
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.toolbar label{font-size:12px;color:var(--txt);font-weight:700}
+.toolbar select{font-size:13px;padding:7px 10px;border:2px solid var(--nv);border-radius:8px;background:#ffffff;color:var(--nv);font-weight:700;font-family:var(--font)}
+.btn-nv{background:var(--nv);color:#fff;border:2px solid var(--nv);border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-outline{background:#ffffff;color:var(--nv);border:2px solid var(--nv);border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.btn-del{background:var(--dng);color:#fff;border:2px solid var(--dng);border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.pcard{background:#ffffff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px}
+.pcard:hover{border-color:var(--nv)}
+.card-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.cid{font-size:11px;font-weight:700;color:#fff;background:var(--nv);padding:3px 10px;border-radius:999px}
+.card-acts{display:flex;gap:6px}
+.bico{border:none;background:var(--nv);border-radius:7px;padding:5px 8px;font-size:13px;cursor:pointer;color:#fff;font-weight:700}
+.bico.d{background:var(--dng)}
+.caddr{font-size:14px;font-weight:700;line-height:1.4;margin-bottom:6px;color:var(--txt)}
+.cmeta{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.pill{font-size:11px;background:var(--nv);color:#fff;border-radius:999px;padding:2px 9px;font-weight:600}
+.crent{font-size:20px;font-weight:700;color:var(--nv);margin-bottom:6px}
+.ctags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.tag{font-size:10px;padding:2px 7px;border-radius:999px;background:var(--nv);color:#fff;font-weight:700}
+.tag.no{background:var(--dng)}
+.csta{font-size:11px;color:var(--txt2);font-weight:600;margin-top:5px}
+.cnote{font-size:11px;color:var(--txt3);margin-top:4px;line-height:1.4}
+.empty{text-align:center;padding:4rem 1rem;color:var(--txt2)}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.modal{background:#ffffff;border-radius:16px;width:100%;max-width:580px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:20px;color:var(--txt)}
+.sl{font-size:10px;font-weight:700;color:var(--nv);text-transform:uppercase;letter-spacing:.12em;margin:18px 0 10px;padding-bottom:5px;border-bottom:2px solid var(--nv)}
+.sl:first-child{margin-top:0}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fg label{font-size:13px;color:var(--txt);font-weight:700}
+.fg input,.fg select,.fg textarea{width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:9px;background:#f5f5fd;color:var(--txt);font-size:14px;font-family:var(--font);font-weight:500;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--nv);background:#fff}
+.fg textarea{resize:vertical;min-height:70px}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.yn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.yn-item{background:#ffffff;border:2px solid var(--border);border-radius:10px;padding:10px 12px}
+.yn-t{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.yn-h{font-size:10px;color:var(--txt2);font-weight:600;line-height:1.3;margin-bottom:8px}
+.tgg{display:flex;gap:6px}
+.tgb{flex:1;padding:8px 4px;border:2px solid var(--nv);border-radius:7px;cursor:pointer;font-size:13px;font-weight:700;background:#ffffff;color:var(--nv);text-align:center;font-family:var(--font)}
+.tgb.ay{background:var(--nv);color:#fff}
+.tgb.an{background:var(--dng);color:#fff;border-color:var(--dng)}
+.fchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.fc{display:inline-flex;align-items:center;padding:7px 13px;border:2px solid var(--nv);border-radius:999px;font-size:12px;cursor:pointer;background:#ffffff;color:var(--nv);font-weight:700;user-select:none}
+.fc.ck{background:var(--nv);color:#fff}
+.xf{display:flex;gap:6px;margin-top:6px}
+.xf input{flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:9px;background:#f5f5fd;color:var(--txt);font-size:14px;font-family:var(--font);outline:none}
+.xfb{background:var(--nv);color:#fff;border:2px solid var(--nv);padding:9px 14px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font)}
+.modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:2px solid var(--nvp)}
+.confirm-body{font-size:14px;color:var(--txt2);line-height:1.6;margin-bottom:20px;font-weight:500}
+.log-wrap{background:#ffffff;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.le{padding:12px 16px;border-bottom:1px solid var(--border)}
+.le:last-child{border-bottom:none}
+.lt{font-size:11px;color:var(--txt3);font-weight:600;margin-bottom:3px}
+.la{display:inline-block;font-size:10px;padding:2px 8px;border-radius:999px;font-weight:700;margin-right:6px}
+.la.create{background:#c8ecd4;color:var(--suc)}
+.la.update{background:var(--nvp);color:var(--nv)}
+.la.delete{background:#ffd4d0;color:var(--dng)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar"><span class="topbar-title">🏠 租盤記錄器</span><span class="topbar-badge" id="badge">0 個租盤</span></div>
+  <div class="tabs"><button class="tab on" id="tab-list">租盤列表</button><button class="tab" id="tab-log">操作記錄</button></div>
+  <div id="main"></div>
+</div>
+<div class="overlay" id="form-overlay" style="display:none">
+<div class="modal">
+  <div class="modal-title" id="form-title">新增租盤</div>
+  <div class="sl">基本資料</div>
+  <div class="fg"><label>地址</label><input id="fa" placeholder="例：九龍灣宏照道xx號xx室"/></div>
+  <div class="fr2">
+    <div class="fg"><label>搵盤途徑</label><select id="fsrc"><option value="">— 選擇 —</option><option>Spacious</option><option>591</option><option>地產代理</option><option>Facebook群組</option><option>口耳相傳</option><option>其他</option></select></div>
+    <div class="fg"><label>租金（HK$/月）</label><input id="frent" type="number" placeholder="8000"/></div>
+  </div>
+  <div class="fr2">
+    <div class="fg"><label>實用面積（呎）</label><input id="fsize" type="number" placeholder="280"/></div>
+    <div class="fg"><label>樓層</label><input id="ffloor" placeholder="8"/></div>
+  </div>
+  <div class="fr2">
+    <div class="fg"><label>樓齡（年）</label><input id="fage" type="number" placeholder="15"/></div>
+    <div class="fg"></div>
+  </div>
+  <div class="sl">詳細資料</div>
+  <div class="yn-grid">
+    <div class="yn-item"><div class="yn-t">電梯</div><div class="yn-h">大廈有升降機</div><div class="tgg"><button class="tgb" id="yy-lift">係</button><button class="tgb" id="yn-lift">否</button></div></div>
+    <div class="yn-item"><div class="yn-t">平台直達</div><div class="yn-h">電梯後無需再行樓梯至單位</div><div class="tgg"><button class="tgb" id="yy-flat">係</button><button class="tgb" id="yn-flat">否</button></div></div>
+    <div class="yn-item"><div class="yn-t">乾濕分離</div><div class="yn-h">淋浴區與乾區分開</div><div class="tgg"><button class="tgb" id="yy-wd">係</button><button class="tgb" id="yn-wd">否</button></div></div>
+    <div class="yn-item"><div class="yn-t">包家具</div><div class="yn-h">業主提供傢俱</div><div class="tgg"><button class="tgb" id="yy-furn">係</button><button class="tgb" id="yn-furn">否</button></div></div>
+  </div>
+  <div id="furn-sec" style="display:none;margin-bottom:14px">
+    <div style="font-size:12px;font-weight:700;color:var(--nv);margin-bottom:8px">家具清單</div>
+    <div class="fchips" id="fchips"><span class="fc" data-f="床">床</span><span class="fc" data-f="雪櫃">雪櫃</span><span class="fc" data-f="洗衣機">洗衣機</span><span class="fc" data-f="微波爐">微波爐</span><span class="fc" data-f="梳化">梳化</span></div>
+    <div class="xf"><input id="xfi" placeholder="其他家具…"/><button class="xfb" id="xfb">＋ 加入</button></div>
+  </div>
+  <div class="sl">業主資料</div>
+  <div class="fg"><label>業主背景</label><input id="fll" placeholder="例：個人業主、地產公司、中介人…"/></div>
+  <div class="fg"><label>注意事項</label><textarea id="fln" placeholder="例：最短租期、唔可以養寵物…"></textarea></div>
+  <div class="sl">地區資料</div>
+  <div class="fg"><label>最近車站及步行時間</label><input id="fsta" placeholder="例：九龍灣站 步行5分鐘"/></div>
+  <div class="fg"><label>附近設施</label><input id="ffac" placeholder="例：超市、街市、公園…"/></div>
+  <div class="sl">其他備注</div>
+  <div class="fg"><textarea id="fnotes" placeholder="任何備注、印象、感覺…"></textarea></div>
+  <div class="modal-acts"><button class="btn-outline" id="form-cancel">取消</button><button class="btn-nv" id="form-save">新增租盤</button></div>
+</div>
+</div>
+<div class="overlay" id="del-overlay" style="display:none">
+<div class="modal" style="max-width:380px">
+  <div class="modal-title" style="color:var(--dng)">確認刪除</div>
+  <div class="confirm-body" id="del-body"></div>
+  <div class="modal-acts"><button class="btn-outline" id="del-cancel">取消</button><button class="btn-del" id="del-confirm">確認刪除</button></div>
+</div>
+</div>
+<script>
+var listings=[],actLog=[],idCtr=100,currentTab='list',sortBy='id',editingId=null,deletingId=null;
+var yn={lift:'?',flat:'?',wd:'?',furn:'?'};
+var furnItems=[];
+var DFURN=['床','雪櫃','洗衣機','微波爐','梳化'];
+function save(){try{localStorage.setItem('rt_final',JSON.stringify({listings:listings,actLog:actLog,idCtr:idCtr}));}catch(e){}}
+function load(){var raw;try{raw=localStorage.getItem('rt_final');}catch(e){}if(raw){var d=JSON.parse(raw);listings=d.listings||[];actLog=d.actLog||[];idCtr=d.idCtr||100;}}
+function makeId(){idCtr++;return 'RP-'+idCtr;}
+function makeTs(){var d=new Date(),p=function(n){return n<10?'0'+n:''+n;};return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());}
+function pushLog(a,id,addr){actLog.unshift({a:a,id:id,addr:addr,t:makeTs()});if(actLog.length>200)actLog=actLog.slice(0,200);}
+function renderMain(){
+  document.getElementById('badge').textContent=listings.length+' 個租盤';
+  if(currentTab==='log'){renderLog();return;}
+  var ls=listings.slice().sort(function(a,b){if(sortBy==='rent')return(parseInt(a.rent)||0)-(parseInt(b.rent)||0);if(sortBy==='size')return(parseInt(b.size)||0)-(parseInt(a.size)||0);if(sortBy==='age')return(parseInt(a.age)||999)-(parseInt(b.age)||999);return a.id<b.id?-1:1;});
+  var avg=0;if(listings.length){var s=0;for(var i=0;i<listings.length;i++)s+=parseInt(listings[i].rent)||0;avg=Math.round(s/listings.length);}
+  var h='<div class="stats"><div class="stat"><div class="stat-l">租盤數量</div><div class="stat-v">'+listings.length+'</div></div><div class="stat"><div class="stat-l">平均租金</div><div class="stat-v">'+(avg?'$'+avg.toLocaleString():'—')+'</div></div></div>'+
+    '<div class="toolbar"><label>排序：</label><select id="sort-sel"><option value="id"'+(sortBy==='id'?' selected':'')+'>編號</option><option value="rent"'+(sortBy==='rent'?' selected':'')+'>租金低→高</option><option value="size"'+(sortBy==='size'?' selected':'')+'>呎數大→細</option><option value="age"'+(sortBy==='age'?' selected':'')+'>樓齡新→舊</option></select><button class="btn-nv" id="btn-add">＋ 新增租盤</button></div>';
+  if(!ls.length){h+='<div class="empty"><div style="font-size:40px;margin-bottom:12px">🏠</div><div style="margin-bottom:16px;font-weight:700;font-size:15px">未有租盤記錄</div><button class="btn-nv" id="btn-add-empty">新增第一個租盤</button></div>';}
+  else{
+    h+='<div class="cards">';
+    var YNF=[{k:'lift',l:'電梯'},{k:'flataccess',l:'平台直達'},{k:'wetdry',l:'乾濕分離'},{k:'furnished',l:'包家具'}];
+    for(var i=0;i<ls.length;i++){var l=ls[i],tags='';for(var j=0;j<YNF.length;j++){var v=l[YNF[j].k];if(v&&v!=='?')tags+='<span class="tag'+(v==='N'?' no':'')+'">'+YNF[j].l+' '+(v==='Y'?'✓':'✗')+'</span>';}
+      h+='<div class="pcard"><div class="card-hd"><span class="cid">'+l.id+'</span><div class="card-acts"><button class="bico" data-edit="'+l.id+'">✏️</button><button class="bico d" data-del="'+l.id+'">🗑️</button></div></div><div class="caddr">'+(l.address||'（未填地址）')+'</div><div class="cmeta">'+(l.size?'<span class="pill">'+l.size+' 呎</span>':'')+(l.floor?'<span class="pill">'+l.floor+' 樓</span>':'')+(l.age?'<span class="pill">樓齡'+l.age+'年</span>':'')+(l.source?'<span class="pill">'+l.source+'</span>':'')+'</div><div class="crent">'+(l.rent?'HK$'+parseInt(l.rent).toLocaleString()+'/月':'—')+'</div>'+(tags?'<div class="ctags">'+tags+'</div>':'')+(l.stationDist?'<div class="csta">🚇 '+l.stationDist+'</div>':'')+(l.notes?'<div class="cnote">'+l.notes.slice(0,80)+(l.notes.length>80?'…':'')+'</div>':'')+'</div>';}
+    h+='</div>';
+  }
+  document.getElementById('main').innerHTML=h;
+  var ss=document.getElementById('sort-sel');if(ss)ss.addEventListener('change',function(){sortBy=this.value;renderMain();});
+  var ba=document.getElementById('btn-add');if(ba)ba.addEventListener('click',openCreate);
+  var bae=document.getElementById('btn-add-empty');if(bae)bae.addEventListener('click',openCreate);
+  var ebs=document.querySelectorAll('[data-edit]');for(var i=0;i<ebs.length;i++)(function(b){b.addEventListener('click',function(){openEdit(b.getAttribute('data-edit'));});})(ebs[i]);
+  var dbs=document.querySelectorAll('[data-del]');for(var i=0;i<dbs.length;i++)(function(b){b.addEventListener('click',function(){openDel(b.getAttribute('data-del'));});})(dbs[i]);
+}
+function renderLog(){var h='';if(!actLog.length){h='<div class="empty"><div style="font-size:36px;margin-bottom:10px">📋</div><div style="font-weight:700">尚無操作記錄</div></div>';}else{h='<div class="log-wrap">';for(var i=0;i<actLog.length;i++){var e=actLog[i],an=e.a==='create'?'新增':e.a==='update'?'更新':'刪除';h+='<div class="le"><div class="lt">'+e.t+'</div><div><span class="la '+e.a+'">'+an+'</span><strong>'+e.id+'</strong> — '+(e.addr||'（未填地址）')+'</div></div>';}h+='</div>';}document.getElementById('main').innerHTML=h;}
+function setYN(k,v){yn[k]=v;var map={lift:['yy-lift','yn-lift'],flat:['yy-flat','yn-flat'],wd:['yy-wd','yn-wd'],furn:['yy-furn','yn-furn']};var ids=map[k],yb=document.getElementById(ids[0]),nb=document.getElementById(ids[1]);if(yb)yb.className='tgb'+(v==='Y'?' ay':'');if(nb)nb.className='tgb'+(v==='N'?' an':'');if(k==='furn'){var s=document.getElementById('furn-sec');if(s)s.style.display=v==='Y'?'block':'none';}}
+function resetYNUI(){var keys=['lift','flat','wd','furn'],map={lift:['yy-lift','yn-lift'],flat:['yy-flat','yn-flat'],wd:['yy-wd','yn-wd'],furn:['yy-furn','yn-furn']};for(var i=0;i<keys.length;i++){var ids=map[keys[i]],yb=document.getElementById(ids[0]),nb=document.getElementById(ids[1]);if(yb)yb.className='tgb';if(nb)nb.className='tgb';}}
+function applyYN(l){var kmap={lift:'lift',flataccess:'flat',wetdry:'wd',furnished:'furn'};for(var fk in kmap){if(l[fk]&&l[fk]!=='?')setYN(kmap[fk],l[fk]);}}
+function resetChips(){var chips=document.querySelectorAll('#fchips .fc[data-f]');for(var i=0;i<chips.length;i++)chips[i].className='fc';var extras=document.querySelectorAll('#fchips [data-extra]');for(var i=0;i<extras.length;i++)extras[i].parentNode.removeChild(extras[i]);furnItems=[];}
+function applyChips(items){furnItems=items?items.slice():[];var chips=document.querySelectorAll('#fchips .fc[data-f]');for(var i=0;i<chips.length;i++){var f=chips[i].getAttribute('data-f');chips[i].className='fc'+(furnItems.indexOf(f)>=0?' ck':'');}for(var i=0;i<furnItems.length;i++){if(DFURN.indexOf(furnItems[i])<0)addExtraChip(furnItems[i]);}}
+function addExtraChip(v){var c=document.getElementById('fchips'),sp=document.createElement('span');sp.className='fc ck';sp.setAttribute('data-extra','1');sp.setAttribute('data-f',v);sp.textContent=v;sp.addEventListener('click',function(){toggleFurn(sp,v);});c.appendChild(sp);}
+function toggleFurn(el,f){var idx=furnItems.indexOf(f);if(idx>=0){furnItems.splice(idx,1);el.className='fc';}else{furnItems.push(f);el.className='fc ck';}}
+function clearForm(){['fa','fsrc','frent','fsize','ffloor','fage','fll','fln','fsta','ffac','fnotes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});yn={lift:'?',flat:'?',wd:'?',furn:'?'};resetYNUI();resetChips();document.getElementById('furn-sec').style.display='none';}
+function fillForm(l){document.getElementById('fa').value=l.address||'';document.getElementById('fsrc').value=l.source||'';document.getElementById('frent').value=l.rent||'';document.getElementById('fsize').value=l.size||'';document.getElementById('ffloor').value=l.floor||'';document.getElementById('fage').value=l.age||'';document.getElementById('fll').value=l.landlordInfo||'';document.getElementById('fln').value=l.landlordNotes||'';document.getElementById('fsta').value=l.stationDist||'';document.getElementById('ffac').value=l.facilities||'';document.getElementById('fnotes').value=l.notes||'';yn={lift:l.lift||'?',flat:l.flataccess||'?',wd:l.wetdry||'?',furn:l.furnished||'?'};resetYNUI();applyYN(l);applyChips(l.furnItems);document.getElementById('furn-sec').style.display=l.furnished==='Y'?'block':'none';}
+function openCreate(){editingId=null;clearForm();document.getElementById('form-title').textContent='新增租盤';document.getElementById('form-save').textContent='新增租盤';document.getElementById('form-overlay').style.display='flex';}
+function openEdit(id){var l=null;for(var i=0;i<listings.length;i++)if(listings[i].id===id){l=listings[i];break;}if(!l)return;editingId=id;fillForm(l);document.getElementById('form-title').textContent='編輯租盤 · '+id;document.getElementById('form-save').textContent='儲存更改';document.getElementById('form-overlay').style.display='flex';}
+function closeForm(){document.getElementById('form-overlay').style.display='none';}
+function saveForm(){var g=function(id){var el=document.getElementById(id);return el?el.value:'';};var rec={id:editingId||makeId(),address:g('fa'),source:g('fsrc'),rent:g('frent'),size:g('fsize'),floor:g('ffloor'),age:g('fage'),lift:yn.lift,flataccess:yn.flat,wetdry:yn.wd,furnished:yn.furn,furnItems:furnItems.slice(),landlordInfo:g('fll'),landlordNotes:g('fln'),stationDist:g('fsta'),facilities:g('ffac'),notes:g('fnotes')};if(editingId){for(var i=0;i<listings.length;i++)if(listings[i].id===editingId){listings[i]=rec;break;}}else listings.push(rec);pushLog(editingId?'update':'create',rec.id,rec.address);save();closeForm();renderMain();}
+function openDel(id){deletingId=id;var l=null;for(var i=0;i<listings.length;i++)if(listings[i].id===id){l=listings[i];break;}document.getElementById('del-body').innerHTML='確定要刪除 <strong>'+(l?l.id:'')+'</strong><br>'+(l?l.address:'')+'？<br><br>此操作不可撤銷。';document.getElementById('del-overlay').style.display='flex';}
+function closeDel(){document.getElementById('del-overlay').style.display='none';}
+function confirmDel(){for(var i=0;i<listings.length;i++)if(listings[i].id===deletingId){pushLog('delete',listings[i].id,listings[i].address);break;}listings=listings.filter(function(x){return x.id!==deletingId;});save();closeDel();renderMain();}
+document.getElementById('tab-list').addEventListener('click',function(){currentTab='list';this.className='tab on';document.getElementById('tab-log').className='tab';renderMain();});
+document.getElementById('tab-log').addEventListener('click',function(){currentTab='log';this.className='tab on';document.getElementById('tab-list').className='tab';renderMain();});
+document.getElementById('form-cancel').addEventListener('click',closeForm);
+document.getElementById('form-save').addEventListener('click',saveForm);
+document.getElementById('del-cancel').addEventListener('click',closeDel);
+document.getElementById('del-confirm').addEventListener('click',confirmDel);
+var ynPairs=[['yy-lift','lift','Y'],['yn-lift','lift','N'],['yy-flat','flat','Y'],['yn-flat','flat','N'],['yy-wd','wd','Y'],['yn-wd','wd','N'],['yy-furn','furn','Y'],['yn-furn','furn','N']];
+for(var i=0;i<ynPairs.length;i++)(function(row){var el=document.getElementById(row[0]);if(el)el.addEventListener('click',function(){setYN(row[1],row[2]);});})(ynPairs[i]);
+var dchips=document.querySelectorAll('#fchips .fc[data-f]');
+for(var i=0;i<dchips.length;i++)(function(ch){ch.addEventListener('click',function(){toggleFurn(ch,ch.getAttribute('data-f'));});})(dchips[i]);
+document.getElementById('xfb').addEventListener('click',function(){var inp=document.getElementById('xfi'),v=inp.value.trim();if(!v)return;inp.value='';if(furnItems.indexOf(v)>=0)return;furnItems.push(v);addExtraChip(v);});
+document.getElementById('xfi').addEventListener('keydown',function(e){if(e.keyCode===13){e.preventDefault();document.getElementById('xfb').click();}});
+document.getElementById('form-overlay').addEventListener('click',function(e){if(e.target===this)closeForm();});
+document.getElementById('del-overlay').addEventListener('click',function(e){if(e.target===this)closeDel();});
+load();renderMain();
+</script>
+</body>
+</html>
