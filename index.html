@@ -391,17 +391,16 @@ function renderTodo(){
   if(todoFilterCat!=='all')ts=ts.filter(function(t){return t.cat===todoFilterCat;});
   if(todoFilterSev!=='all')ts=ts.filter(function(t){return t.sev===todoFilterSev;});
   if(todoFilterOwner!=='all')ts=ts.filter(function(t){return (t.owner||'me')===todoFilterOwner;});
-  if(todoFilterOwner!=='all')ts=ts.filter(function(t){return (t.owner||'me')===todoFilterOwner;});
   ts.sort(function(a,b){var sa=parseInt(a.sev.split('-')[1]),sb=parseInt(b.sev.split('-')[1]);if(sa!==sb)return sa-sb;if(a.deadline&&b.deadline)return a.deadline<b.deadline?-1:1;if(a.deadline)return -1;if(b.deadline)return 1;return 0;});
   var pending=todos.filter(function(t){return !t.done;}).length;
   var h='<div class="stats"><div class="stat"><div class="stat-l">待完成</div><div class="stat-v">'+pending+'</div></div><div class="stat"><div class="stat-l">已完成</div><div class="stat-v">'+(todos.length-pending)+'</div></div></div>'+
-    '<div class="filter-bar"><label>狀態：</label><select id="fs-status"><option value="all"'+(todoFilterStatus==='all'?' selected':'')+'>全部</option><option value="pending"'+(todoFilterStatus==='pending'?' selected':'')+'>未完成</option><option value="done"'+(todoFilterStatus==='done'?' selected':'')+'>已完成</option></select><label>分類：</label><select id="fs-cat"><option value="all"'+(todoFilterCat==='all'?' selected':'')+'>全部</option><option value="搬屋"'+(todoFilterCat==='搬屋'?' selected':'')+'>搬屋</option><option value="租務"'+(todoFilterCat==='租務'?' selected':'')+'>租務</option><option value="其他"'+(todoFilterCat==='其他'?' selected':'')+'>其他</option></select><label>緊急：</label><select id="fs-sev"><option value="all"'+(todoFilterSev==='all'?' selected':'')+'>全部</option><option value="Sev-1"'+(todoFilterSev==='Sev-1'?' selected':'')+'>Sev-1</option><option value="Sev-2"'+(todoFilterSev==='Sev-2'?' selected':'')+'>Sev-2</option><option value="Sev-3"'+(todoFilterSev==='Sev-3'?' selected':'')+'>Sev-3</option></select><label>負責：</label><select id=\"fs-owner\"><option value=\"all\"'+(todoFilterOwner==='all'?' selected':'')+'>全部</option><option value=\"me\"'+(todoFilterOwner==='me'?' selected':'')+'>我行動中</option><option value=\"them\"'+(todoFilterOwner==='them'?' selected':'')+'>等對方</option></select><button class="btn-nv" id="btn-add-todo" style="margin-left:auto">＋ 新增事項</button></div>';
+    '<div class="filter-bar"><label>狀態：</label><select id="fs-status"><option value="all"'+(todoFilterStatus==='all'?' selected':'')+'>全部</option><option value="pending"'+(todoFilterStatus==='pending'?' selected':'')+'>未完成</option><option value="done"'+(todoFilterStatus==='done'?' selected':'')+'>已完成</option></select><label>分類：</label><select id="fs-cat"><option value="all"'+(todoFilterCat==='all'?' selected':'')+'>全部</option><option value="搬屋"'+(todoFilterCat==='搬屋'?' selected':'')+'>搬屋</option><option value="租務"'+(todoFilterCat==='租務'?' selected':'')+'>租務</option><option value="其他"'+(todoFilterCat==='其他'?' selected':'')+'>其他</option></select><label>緊急：</label><select id="fs-sev"><option value="all"'+(todoFilterSev==='all'?' selected':'')+'>全部</option><option value="Sev-1"'+(todoFilterSev==='Sev-1'?' selected':'')+'>Sev-1</option><option value="Sev-2"'+(todoFilterSev==='Sev-2'?' selected':'')+'>Sev-2</option><option value="Sev-3"'+(todoFilterSev==='Sev-3'?' selected':'')+'>Sev-3</option></select><label>負責：</label><select id="fs-owner"><option value="all"'+(todoFilterOwner==='all'?' selected':'')+'>全部</option><option value="me"'+(todoFilterOwner==='me'?' selected':'')+'>我行動中</option><option value="them"'+(todoFilterOwner==='them'?' selected':'')+'>等對方</option></select><button class="btn-nv" id="btn-add-todo" style="margin-left:auto">＋ 新增事項</button></div>';
   if(!ts.length){h+='<div class="empty"><div style="font-size:38px;margin-bottom:10px">📋</div><div style="margin-bottom:14px;font-weight:700">'+(todos.length?'沒有符合條件的事項':'未有待辦事項')+'</div>'+(todos.length?'':'<button class="btn-nv" id="btn-add-todo-empty">新增第一個事項</button>')+'</div>';}
   else{var td=today();h+='<div class="todo-list">';for(var i=0;i<ts.length;i++){var t=ts[i];var overdue=!t.done&&t.deadline&&t.deadline<td;var sevCls=t.sev==='Sev-1'?'sev-1':t.sev==='Sev-2'?'sev-2':'sev-3';var tagsHtml='';if(t.tags&&t.tags.length)for(var j=0;j<t.tags.length;j++)tagsHtml+='<span class="todo-tag">'+t.tags[j]+'</span>';var dlHtml=t.deadline?'<span class="todo-dl'+(overdue?' overdue':'')+'">📅 '+t.deadline+(overdue?' ⚠️過期':'')+'</span>':'';var title=t.title||(t.content?t.content.slice(0,20):'（未填標題）');
       var preview=t.content&&t.content.length>0?'<div class="todo-preview" data-expand="'+t.id+'">'+(t.content.length>10?t.content.slice(0,10)+'…':t.content)+'</div>':'';
       var expandHint=t.content&&t.content.length>0?'<div class="todo-expand-hint" data-expand="'+t.id+'">▶ 展開詳情</div>':'';
       var ownerVal=t.owner||'me';
-      var ownerBadge=t.done?'':'<button class=\"owner-badge '+(ownerVal==='me'?'owner-me':'owner-them')+'\" data-owner-toggle=\"'+t.id+'\">>'+(ownerVal==='me'?'👤 我行動中':'⏳ 等對方')+'</button>';
+      var ownerBadge=t.done?'':'<button class="owner-badge '+(ownerVal==='me'?'owner-me':'owner-them')+'" data-owner-toggle="'+t.id+'">'+(ownerVal==='me'?'&#128100; 我行動中':'&#9203; 等對方')+'</button>';
       var detailHtml='';
       if(t.content)detailHtml+='<div class="todo-detail-row"><div class="todo-detail-label">任務內容</div><div class="todo-detail-val">'+t.content+'</div></div>';
       detailHtml+='<div class="todo-detail-row"><div class="todo-detail-label">分類 / 緊急 / Deadline</div><div class="todo-detail-val">'+t.cat+' · '+t.sev+(t.deadline?' · 📅 '+t.deadline:'')+(overdue?' ⚠️過期':'')+'</div></div>';
@@ -642,64 +641,94 @@ function openExport(){
 }
 function closeExport(){document.getElementById('export-overlay').style.display='none';}
 
+var exportFormat='';
+
 function doExportJSON(){
   exportFormat='json';
-  var data=listings.map(function(l){return {
-    id:l.id, address:l.address, source:l.source,
-    rent:l.rent?parseInt(l.rent):null,
-    size:l.size?parseInt(l.size):null,
-    floor:l.floor||null, age:l.age?parseInt(l.age):null,
-    lift:l.lift, flataccess:l.flataccess, wetdry:l.wetdry, furnished:l.furnished,
-    furnItems:l.furnItems||[],
-    landlordInfo:l.landlordInfo||'', landlordNotes:l.landlordNotes||'',
-    stationDist:l.stationDist||'', facilities:l.facilities||'',
-    notes:l.notes||''
-  };});
-  var out=JSON.stringify(data,null,2);
-  showExportOutput('JSON（'+data.length+' 個租盤）', out);
+  var data=listings.map(function(l){
+    return {id:l.id,address:l.address,source:l.source,rent:l.rent?parseInt(l.rent):null,size:l.size?parseInt(l.size):null,floor:l.floor||null,age:l.age?parseInt(l.age):null,lift:l.lift,flataccess:l.flataccess,wetdry:l.wetdry,furnished:l.furnished,furnItems:l.furnItems||[],landlordInfo:l.landlordInfo||'',landlordNotes:l.landlordNotes||'',stationDist:l.stationDist||'',facilities:l.facilities||'',notes:l.notes||''};
+  });
+  showExportOutput('JSON ('+data.length+' 個租盤)',JSON.stringify(data,null,2));
 }
 
 function doExportCSV(){
   exportFormat='csv';
-  var headers=['編號','地址','搵盤途徑','租金(HK$)','呎數','樓層','樓齡','電梯','平台直達','乾濕分離','包家具','家具','業主背景','業主注意','車站距離','附近設施','備注'];
+  function esc(s){return '"'+((s||'').replace(/"/g,'""'))+'"';}
+  var NL=String.fromCharCode(10);
+  var headers=['編號','地址','搵盤途徑','租金','呎數','樓層','樓齡','電梯','平台直達','乾濕分離','包家具','家具','業主背景','業主注意','車站距離','附近設施','備注'];
   var rows=[headers.join(',')];
   for(var i=0;i<listings.length;i++){
     var l=listings[i];
-    var row=[
-      l.id,
-      '"'+(l.address||'').replace(/"/g,'""')+'"',
-      '"'+(l.source||'')+'"',
-      l.rent||'',
-      l.size||'',
-      '"'+(l.floor||'')+'"',
-      l.age||'',
-      l.lift==='Y'?'是':l.lift==='N'?'否':'',
-      l.flataccess==='Y'?'是':l.flataccess==='N'?'否':'',
-      l.wetdry==='Y'?'是':l.wetdry==='N'?'否':'',
-      l.furnished==='Y'?'是':l.furnished==='N'?'否':'',
-      '"'+((l.furnItems||[]).join('、'))+'"',
-      '"'+(l.landlordInfo||'').replace(/"/g,'""')+'"',
-      '"'+(l.landlordNotes||'').replace(/"/g,'""')+'"',
-      '"'+(l.stationDist||'').replace(/"/g,'""')+'"',
-      '"'+(l.facilities||'').replace(/"/g,'""')+'"',
-      '"'+(l.notes||'').replace(/"/g,'""')+'"'
-    ];
+    var row=[l.id,esc(l.address),esc(l.source),l.rent||'',l.size||'',esc(l.floor),l.age||'',l.lift==='Y'?'是':l.lift==='N'?'否':'',l.flataccess==='Y'?'是':l.flataccess==='N'?'否':'',l.wetdry==='Y'?'是':l.wetdry==='N'?'否':'',l.furnished==='Y'?'是':l.furnished==='N'?'否':'',esc((l.furnItems||[]).join('、')),esc(l.landlordInfo),esc(l.landlordNotes),esc(l.stationDist),esc(l.facilities),esc(l.notes)];
     rows.push(row.join(','));
   }
-  showExportOutput('CSV（'+listings.length+' 個租盤）', rows.join('\n'));
+  showExportOutput('CSV ('+listings.length+' 個租盤)',rows.join(NL));
 }
 
 function doExportTXT(){
   exportFormat='txt';
+  var NL=String.fromCharCode(10);
+  var D='$';
   var lines=[];
-  lines.push('=== 租盤記錄 (' + listings.length + ' 個) ===');
+  lines.push('=== 租盤記錄 ('+listings.length+' 個) ===');
   lines.push('匯出時間：'+makeTs());
   lines.push('');
   for(var i=0;i<listings.length;i++){
     var l=listings[i];
-    lines.push('─────────────────────');
-    lines.push('【'+l.id+'】 '+( l.address||'（未填地址）'));
-    if(l.rent) lines.push('租金：HK
+    lines.push('---------------------');
+    lines.push('['+l.id+'] '+(l.address||'（未填地址）'));
+    if(l.rent)lines.push('租金：HK'+D+parseInt(l.rent).toLocaleString()+'/月');
+    var meta=[];
+    if(l.size)meta.push(l.size+'呎');
+    if(l.floor)meta.push(l.floor+'樓');
+    if(l.age)meta.push('樓齡'+l.age+'年');
+    if(meta.length)lines.push('基本：'+meta.join(' '));
+    if(l.source)lines.push('來源：'+l.source);
+    var yns=[];
+    if(l.lift==='Y')yns.push('有電梯');else if(l.lift==='N')yns.push('無電梯');
+    if(l.flataccess==='Y')yns.push('平台直達');else if(l.flataccess==='N')yns.push('非平台直達');
+    if(l.wetdry==='Y')yns.push('乾濕分離');else if(l.wetdry==='N')yns.push('無乾濕分離');
+    if(l.furnished==='Y'){yns.push('包家具');if(l.furnItems&&l.furnItems.length)yns.push('('+l.furnItems.join('、')+')');}
+    else if(l.furnished==='N')yns.push('不包家具');
+    if(yns.length)lines.push('設施：'+yns.join(' '));
+    if(l.stationDist)lines.push('交通：'+l.stationDist);
+    if(l.facilities)lines.push('附近：'+l.facilities);
+    if(l.landlordInfo)lines.push('業主：'+l.landlordInfo);
+    if(l.landlordNotes)lines.push('業主注意：'+l.landlordNotes);
+    if(l.notes)lines.push('備注：'+l.notes);
+    lines.push('');
+  }
+  showExportOutput('純文字（可直接貼入Chat）',lines.join(NL));
+}
+
+function showExportOutput(label,text){
+  document.getElementById('export-output-label').textContent=label;
+  document.getElementById('export-textarea').value=text;
+  document.getElementById('export-output').style.display='block';
+  document.getElementById('exp-copy-confirm').style.display='none';
+}
+
+function copyExport(){
+  var ta=document.getElementById('export-textarea');
+  ta.select();ta.setSelectionRange(0,99999);
+  try{document.execCommand('copy');}catch(e){if(navigator.clipboard)navigator.clipboard.writeText(ta.value);}
+  document.getElementById('exp-copy-confirm').style.display='block';
+  setTimeout(function(){document.getElementById('exp-copy-confirm').style.display='none';},2000);
+}
+
+function downloadExport(){
+  var text=document.getElementById('export-textarea').value;
+  var ext=exportFormat==='json'?'json':exportFormat==='csv'?'csv':'txt';
+  var mime=exportFormat==='json'?'application/json':exportFormat==='csv'?'text/csv':'text/plain';
+  var blob=new Blob(['\uFEFF'+text],{type:mime+';charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='rental_export.'+ext;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+
 document.getElementById('tab-list').addEventListener('click',function(){currentTab='list';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
 document.getElementById('tab-todo').addEventListener('click',function(){currentTab='todo';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
 document.getElementById('tab-budget').addEventListener('click',function(){currentTab='budget';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
@@ -722,100 +751,6 @@ document.getElementById('exp-csv').addEventListener('click',doExportCSV);
 document.getElementById('exp-txt').addEventListener('click',doExportTXT);
 document.getElementById('exp-copy').addEventListener('click',copyExport);
 document.getElementById('exp-download').addEventListener('click',downloadExport);
-document.getElementById('form-overlay').addEventListener('click',function(e){if(e.target===this)closeForm();});
-document.getElementById('todo-overlay').addEventListener('click',function(e){if(e.target===this)closeTodo();});
-document.getElementById('budget-overlay').addEventListener('click',function(e){if(e.target===this)closeBudget();});
-document.getElementById('expense-overlay').addEventListener('click',function(e){if(e.target===this)closeExpense();});
-document.getElementById('del-overlay').addEventListener('click',function(e){if(e.target===this)closeDel();});
-
-var ynPairs=[['yy-lift','lift','Y'],['yn-lift','lift','N'],['yy-flat','flat','Y'],['yn-flat','flat','N'],['yy-wd','wd','Y'],['yn-wd','wd','N'],['yy-furn','furn','Y'],['yn-furn','furn','N']];
-for(var i=0;i<ynPairs.length;i++)(function(row){var el=document.getElementById(row[0]);if(el)el.addEventListener('click',function(){setYN(row[1],row[2]);});})(ynPairs[i]);
-var dchips=document.querySelectorAll('#fchips .fc[data-f]');for(var i=0;i<dchips.length;i++)(function(ch){ch.addEventListener('click',function(){toggleFurn(ch,ch.getAttribute('data-f'));});})(dchips[i]);
-document.getElementById('xfb').addEventListener('click',function(){var inp=document.getElementById('xfi'),v=inp.value.trim();if(!v)return;inp.value='';if(furnItems.indexOf(v)>=0)return;furnItems.push(v);addExtraChip(v);});
-document.getElementById('xfi').addEventListener('keydown',function(e){if(e.keyCode===13){e.preventDefault();document.getElementById('xfb').click();}});
-document.getElementById('td-cat').addEventListener('change',function(){var cat=this.value;document.getElementById('td-custom-cat-fg').style.display=cat==='其他'?'block':'none';tdTags=[];buildTodoTagChips(cat,[]);});
-document.getElementById('td-tag-add').addEventListener('click',function(){var inp=document.getElementById('td-tag-input'),v=inp.value.trim();if(!v)return;inp.value='';if(tdTags.indexOf(v)>=0)return;tdTags.push(v);addTodoExtraChip(v,true);});
-document.getElementById('td-tag-input').addEventListener('keydown',function(e){if(e.keyCode===13){e.preventDefault();document.getElementById('td-tag-add').click();}});
-
-load();renderMain();
-</script>
-</body>
-</html>
-+parseInt(l.rent).toLocaleString()+'/月');
-    if(l.size||l.floor||l.age){
-      var meta=[];
-      if(l.size) meta.push(l.size+'呎');
-      if(l.floor) meta.push(l.floor+'樓');
-      if(l.age) meta.push('樓齡'+l.age+'年');
-      lines.push('基本：'+meta.join('　'));
-    }
-    if(l.source) lines.push('來源：'+l.source);
-    var yns=[];
-    if(l.lift==='Y') yns.push('有電梯');else if(l.lift==='N') yns.push('無電梯');
-    if(l.flataccess==='Y') yns.push('平台直達');else if(l.flataccess==='N') yns.push('非平台直達');
-    if(l.wetdry==='Y') yns.push('乾濕分離');else if(l.wetdry==='N') yns.push('無乾濕分離');
-    if(l.furnished==='Y'){yns.push('包家具');if(l.furnItems&&l.furnItems.length)yns.push('（'+l.furnItems.join('、')+'）');}
-    else if(l.furnished==='N') yns.push('不包家具');
-    if(yns.length) lines.push('設施：'+yns.join('　'));
-    if(l.stationDist) lines.push('交通：'+l.stationDist);
-    if(l.facilities) lines.push('設施：'+l.facilities);
-    if(l.landlordInfo) lines.push('業主：'+l.landlordInfo);
-    if(l.landlordNotes) lines.push('業主注意：'+l.landlordNotes);
-    if(l.notes) lines.push('備注：'+l.notes);
-    lines.push('');
-  }
-  showExportOutput('純文字（可直接貼入Chat）', lines.join('\n'));
-}
-
-function showExportOutput(label, text){
-  document.getElementById('export-output-label').textContent=label;
-  document.getElementById('export-textarea').value=text;
-  document.getElementById('export-output').style.display='block';
-  document.getElementById('exp-copy-confirm').style.display='none';
-}
-
-function copyExport(){
-  var ta=document.getElementById('export-textarea');
-  ta.select();
-  try{
-    document.execCommand('copy');
-    document.getElementById('exp-copy-confirm').style.display='block';
-    setTimeout(function(){document.getElementById('exp-copy-confirm').style.display='none';},2000);
-  }catch(e){
-    navigator.clipboard&&navigator.clipboard.writeText(ta.value);
-    document.getElementById('exp-copy-confirm').style.display='block';
-    setTimeout(function(){document.getElementById('exp-copy-confirm').style.display='none';},2000);
-  }
-}
-
-function downloadExport(){
-  var text=document.getElementById('export-textarea').value;
-  var ext=exportFormat==='json'?'json':exportFormat==='csv'?'csv':'txt';
-  var mime=exportFormat==='json'?'application/json':exportFormat==='csv'?'text/csv':'text/plain';
-  var blob=new Blob([text],{type:mime+';charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url;a.download='rental_export_'+makeTs().replace(/[\/: ]/g,'_')+'.'+ext;
-  document.body.appendChild(a);a.click();
-  document.body.removeChild(a);URL.revokeObjectURL(url);
-}
-
-// ── static events ──
-document.getElementById('tab-list').addEventListener('click',function(){currentTab='list';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
-document.getElementById('tab-todo').addEventListener('click',function(){currentTab='todo';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
-document.getElementById('tab-budget').addEventListener('click',function(){currentTab='budget';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
-document.getElementById('tab-log').addEventListener('click',function(){currentTab='log';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
-
-document.getElementById('form-cancel').addEventListener('click',closeForm);
-document.getElementById('form-save').addEventListener('click',saveForm);
-document.getElementById('todo-cancel').addEventListener('click',closeTodo);
-document.getElementById('todo-save').addEventListener('click',saveTodo);
-document.getElementById('budget-cancel').addEventListener('click',closeBudget);
-document.getElementById('budget-save').addEventListener('click',saveBudget);
-document.getElementById('expense-cancel').addEventListener('click',closeExpense);
-document.getElementById('expense-save').addEventListener('click',saveExpense);
-document.getElementById('del-cancel').addEventListener('click',closeDel);
-document.getElementById('del-confirm').addEventListener('click',confirmDel);
 document.getElementById('form-overlay').addEventListener('click',function(e){if(e.target===this)closeForm();});
 document.getElementById('todo-overlay').addEventListener('click',function(e){if(e.target===this)closeTodo();});
 document.getElementById('budget-overlay').addEventListener('click',function(e){if(e.target===this)closeBudget();});
