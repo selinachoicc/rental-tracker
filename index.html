@@ -77,6 +77,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14p
 .todo-detail-label{font-size:10px;font-weight:700;color:var(--nv);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
 .todo-detail-val{font-size:13px;color:var(--txt2);line-height:1.5}
 .todo-expand-hint{font-size:11px;color:var(--nvm);cursor:pointer;margin-top:4px;user-select:none}
+.owner-badge{font-size:11px;border-radius:999px;padding:3px 10px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);user-select:none}
+.owner-me{background:var(--nv);color:#fff}
+.owner-them{background:#E67E22;color:#fff}
 .todo-card.expanded .todo-expand-hint{color:var(--nv)}
 /* budget */
 .budget-section{margin-bottom:20px}
@@ -294,13 +297,47 @@ canvas{display:block;margin:0 auto}
 </div>
 </div>
 
+
+<!-- EXPORT MODAL -->
+<div class="overlay" id="export-overlay" style="display:none">
+<div class="modal" style="max-width:480px">
+  <div class="modal-title">匯出租盤資料</div>
+  <p style="font-size:13px;color:#5a5a78;margin-bottom:16px">選擇格式匯出，可直接貼係Chat入面作分析。</p>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+    <button class="btn-nv" id="exp-json" style="text-align:left;padding:12px 16px">
+      <div style="font-weight:700">JSON</div>
+      <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">完整原始資料，可import返app</div>
+    </button>
+    <button class="btn-nv" id="exp-csv" style="text-align:left;padding:12px 16px">
+      <div style="font-weight:700">CSV</div>
+      <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">適合Excel / Google Sheets分析</div>
+    </button>
+    <button class="btn-nv" id="exp-txt" style="text-align:left;padding:12px 16px">
+      <div style="font-weight:700">純文字</div>
+      <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">最易直接貼係Chat入面</div>
+    </button>
+  </div>
+  <div id="export-output" style="display:none">
+    <div style="font-size:12px;font-weight:700;color:#1B1F4B;margin-bottom:6px" id="export-output-label">輸出：</div>
+    <textarea id="export-textarea" style="width:100%;height:200px;padding:10px;border:2px solid #9496b8;border-radius:9px;font-size:11px;font-family:monospace;background:#f5f5fd;color:#0a0a1a;resize:vertical;outline:none" readonly></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-nv" id="exp-copy" style="flex:1">複製到剪貼板</button>
+      <button class="btn-outline" id="exp-download">下載檔案</button>
+    </div>
+    <div id="exp-copy-confirm" style="font-size:12px;color:#1a6b3a;font-weight:700;margin-top:6px;display:none">✓ 已複製！</div>
+  </div>
+  <div class="modal-acts" style="margin-top:12px;padding-top:12px">
+    <button class="btn-outline" id="export-close">關閉</button>
+  </div>
+</div>
+</div>
 <script>
 // ── data ──
 var listings=[],actLog=[],todos=[],budgetItems=[],expenseItems=[];
 var idCtr=100,todoCtr=200,biCtr=300,eiCtr=400;
 var totalBudget=0;
 var currentTab='list',sortBy='id',editingId=null,deletingId=null,deletingType='rental';
-var todoEditId=null,todoFilterStatus='all',todoFilterCat='all',todoFilterSev='all';
+var todoEditId=null,todoFilterStatus='all',todoFilterCat='all',todoFilterSev='all',todoFilterOwner='all';
 var budgetEditId=null,expenseEditId=null;
 var yn={lift:'?',flat:'?',wd:'?',furn:'?'};
 var furnItems=[],tdTags=[];
@@ -335,12 +372,13 @@ function renderListings(){
   var ls=listings.slice().sort(function(a,b){if(sortBy==='rent')return(parseInt(a.rent)||0)-(parseInt(b.rent)||0);if(sortBy==='size')return(parseInt(b.size)||0)-(parseInt(a.size)||0);if(sortBy==='age')return(parseInt(a.age)||999)-(parseInt(b.age)||999);return a.id<b.id?-1:1;});
   var avg=0;if(listings.length){var s=0;for(var i=0;i<listings.length;i++)s+=parseInt(listings[i].rent)||0;avg=Math.round(s/listings.length);}
   var h='<div class="stats"><div class="stat"><div class="stat-l">租盤數量</div><div class="stat-v">'+listings.length+'</div></div><div class="stat"><div class="stat-l">平均租金</div><div class="stat-v">'+(avg?'$'+avg.toLocaleString():'—')+'</div></div></div>'+
-    '<div class="toolbar"><label>排序：</label><select id="sort-sel"><option value="id"'+(sortBy==='id'?' selected':'')+'>編號</option><option value="rent"'+(sortBy==='rent'?' selected':'')+'>租金低→高</option><option value="size"'+(sortBy==='size'?' selected':'')+'>呎數大→細</option><option value="age"'+(sortBy==='age'?' selected':'')+'>樓齡新→舊</option></select><button class="btn-nv" id="btn-add">＋ 新增租盤</button></div>';
+    '<div class="toolbar"><label>排序：</label><select id="sort-sel"><option value="id"'+(sortBy==='id'?' selected':'')+'>編號</option><option value="rent"'+(sortBy==='rent'?' selected':'')+'>租金低→高</option><option value="size"'+(sortBy==='size'?' selected':'')+'>呎數大→細</option><option value="age"'+(sortBy==='age'?' selected':'')+'>樓齡新→舊</option></select><button class="btn-nv" id="btn-add">＋ 新增租盤</button><button class="btn-outline" id="btn-export">⬇ 匯出</button></div>';
   if(!ls.length){h+='<div class="empty"><div style="font-size:38px;margin-bottom:10px">🏠</div><div style="margin-bottom:14px;font-weight:700">未有租盤記錄</div><button class="btn-nv" id="btn-add-empty">新增第一個租盤</button></div>';}
   else{h+='<div class="cards">';var YNF=[{k:'lift',l:'電梯'},{k:'flataccess',l:'平台直達'},{k:'wetdry',l:'乾濕分離'},{k:'furnished',l:'包家具'}];for(var i=0;i<ls.length;i++){var l=ls[i],tags='';for(var j=0;j<YNF.length;j++){var v=l[YNF[j].k];if(v&&v!=='?')tags+='<span class="tag'+(v==='N'?' no':'')+'">'+YNF[j].l+' '+(v==='Y'?'✓':'✗')+'</span>';}h+='<div class="pcard"><div class="card-hd"><span class="cid">'+l.id+'</span><div class="card-acts"><button class="bico" data-edit="'+l.id+'">✏️</button><button class="bico d" data-del="'+l.id+'" data-dtype="rental">🗑️</button></div></div><div class="caddr">'+(l.address||'（未填地址）')+'</div><div class="cmeta">'+(l.size?'<span class="pill">'+l.size+' 呎</span>':'')+(l.floor?'<span class="pill">'+l.floor+' 樓</span>':'')+(l.age?'<span class="pill">樓齡'+l.age+'年</span>':'')+(l.source?'<span class="pill">'+l.source+'</span>':'')+'</div><div class="crent">'+(l.rent?'HK$'+parseInt(l.rent).toLocaleString()+'/月':'—')+'</div>'+(tags?'<div class="ctags">'+tags+'</div>':'')+(l.stationDist?'<div class="csta">🚇 '+l.stationDist+'</div>':'')+(l.notes?'<div class="cnote">'+l.notes.slice(0,80)+(l.notes.length>80?'…':'')+'</div>':'')+'</div>';}h+='</div>';}
   document.getElementById('main').innerHTML=h;
   var ss=document.getElementById('sort-sel');if(ss)ss.addEventListener('change',function(){sortBy=this.value;renderMain();});
   var ba=document.getElementById('btn-add');if(ba)ba.addEventListener('click',openCreate);
+  var be=document.getElementById('btn-export');if(be)be.addEventListener('click',openExport);
   var bae=document.getElementById('btn-add-empty');if(bae)bae.addEventListener('click',openCreate);
   bindEditDel();
 }
@@ -352,31 +390,38 @@ function renderTodo(){
   if(todoFilterStatus==='done')ts=ts.filter(function(t){return t.done;});
   if(todoFilterCat!=='all')ts=ts.filter(function(t){return t.cat===todoFilterCat;});
   if(todoFilterSev!=='all')ts=ts.filter(function(t){return t.sev===todoFilterSev;});
+  if(todoFilterOwner!=='all')ts=ts.filter(function(t){return (t.owner||'me')===todoFilterOwner;});
+  if(todoFilterOwner!=='all')ts=ts.filter(function(t){return (t.owner||'me')===todoFilterOwner;});
   ts.sort(function(a,b){var sa=parseInt(a.sev.split('-')[1]),sb=parseInt(b.sev.split('-')[1]);if(sa!==sb)return sa-sb;if(a.deadline&&b.deadline)return a.deadline<b.deadline?-1:1;if(a.deadline)return -1;if(b.deadline)return 1;return 0;});
   var pending=todos.filter(function(t){return !t.done;}).length;
   var h='<div class="stats"><div class="stat"><div class="stat-l">待完成</div><div class="stat-v">'+pending+'</div></div><div class="stat"><div class="stat-l">已完成</div><div class="stat-v">'+(todos.length-pending)+'</div></div></div>'+
-    '<div class="filter-bar"><label>狀態：</label><select id="fs-status"><option value="all"'+(todoFilterStatus==='all'?' selected':'')+'>全部</option><option value="pending"'+(todoFilterStatus==='pending'?' selected':'')+'>未完成</option><option value="done"'+(todoFilterStatus==='done'?' selected':'')+'>已完成</option></select><label>分類：</label><select id="fs-cat"><option value="all"'+(todoFilterCat==='all'?' selected':'')+'>全部</option><option value="搬屋"'+(todoFilterCat==='搬屋'?' selected':'')+'>搬屋</option><option value="租務"'+(todoFilterCat==='租務'?' selected':'')+'>租務</option><option value="其他"'+(todoFilterCat==='其他'?' selected':'')+'>其他</option></select><label>緊急：</label><select id="fs-sev"><option value="all"'+(todoFilterSev==='all'?' selected':'')+'>全部</option><option value="Sev-1"'+(todoFilterSev==='Sev-1'?' selected':'')+'>Sev-1</option><option value="Sev-2"'+(todoFilterSev==='Sev-2'?' selected':'')+'>Sev-2</option><option value="Sev-3"'+(todoFilterSev==='Sev-3'?' selected':'')+'>Sev-3</option></select><button class="btn-nv" id="btn-add-todo" style="margin-left:auto">＋ 新增事項</button></div>';
+    '<div class="filter-bar"><label>狀態：</label><select id="fs-status"><option value="all"'+(todoFilterStatus==='all'?' selected':'')+'>全部</option><option value="pending"'+(todoFilterStatus==='pending'?' selected':'')+'>未完成</option><option value="done"'+(todoFilterStatus==='done'?' selected':'')+'>已完成</option></select><label>分類：</label><select id="fs-cat"><option value="all"'+(todoFilterCat==='all'?' selected':'')+'>全部</option><option value="搬屋"'+(todoFilterCat==='搬屋'?' selected':'')+'>搬屋</option><option value="租務"'+(todoFilterCat==='租務'?' selected':'')+'>租務</option><option value="其他"'+(todoFilterCat==='其他'?' selected':'')+'>其他</option></select><label>緊急：</label><select id="fs-sev"><option value="all"'+(todoFilterSev==='all'?' selected':'')+'>全部</option><option value="Sev-1"'+(todoFilterSev==='Sev-1'?' selected':'')+'>Sev-1</option><option value="Sev-2"'+(todoFilterSev==='Sev-2'?' selected':'')+'>Sev-2</option><option value="Sev-3"'+(todoFilterSev==='Sev-3'?' selected':'')+'>Sev-3</option></select><label>負責：</label><select id=\"fs-owner\"><option value=\"all\"'+(todoFilterOwner==='all'?' selected':'')+'>全部</option><option value=\"me\"'+(todoFilterOwner==='me'?' selected':'')+'>我行動中</option><option value=\"them\"'+(todoFilterOwner==='them'?' selected':'')+'>等對方</option></select><button class="btn-nv" id="btn-add-todo" style="margin-left:auto">＋ 新增事項</button></div>';
   if(!ts.length){h+='<div class="empty"><div style="font-size:38px;margin-bottom:10px">📋</div><div style="margin-bottom:14px;font-weight:700">'+(todos.length?'沒有符合條件的事項':'未有待辦事項')+'</div>'+(todos.length?'':'<button class="btn-nv" id="btn-add-todo-empty">新增第一個事項</button>')+'</div>';}
   else{var td=today();h+='<div class="todo-list">';for(var i=0;i<ts.length;i++){var t=ts[i];var overdue=!t.done&&t.deadline&&t.deadline<td;var sevCls=t.sev==='Sev-1'?'sev-1':t.sev==='Sev-2'?'sev-2':'sev-3';var tagsHtml='';if(t.tags&&t.tags.length)for(var j=0;j<t.tags.length;j++)tagsHtml+='<span class="todo-tag">'+t.tags[j]+'</span>';var dlHtml=t.deadline?'<span class="todo-dl'+(overdue?' overdue':'')+'">📅 '+t.deadline+(overdue?' ⚠️過期':'')+'</span>':'';var title=t.title||(t.content?t.content.slice(0,20):'（未填標題）');
       var preview=t.content&&t.content.length>0?'<div class="todo-preview" data-expand="'+t.id+'">'+(t.content.length>10?t.content.slice(0,10)+'…':t.content)+'</div>':'';
       var expandHint=t.content&&t.content.length>0?'<div class="todo-expand-hint" data-expand="'+t.id+'">▶ 展開詳情</div>':'';
+      var ownerVal=t.owner||'me';
+      var ownerBadge=t.done?'':'<button class=\"owner-badge '+(ownerVal==='me'?'owner-me':'owner-them')+'\" data-owner-toggle=\"'+t.id+'\">>'+(ownerVal==='me'?'👤 我行動中':'⏳ 等對方')+'</button>';
       var detailHtml='';
       if(t.content)detailHtml+='<div class="todo-detail-row"><div class="todo-detail-label">任務內容</div><div class="todo-detail-val">'+t.content+'</div></div>';
       detailHtml+='<div class="todo-detail-row"><div class="todo-detail-label">分類 / 緊急 / Deadline</div><div class="todo-detail-val">'+t.cat+' · '+t.sev+(t.deadline?' · 📅 '+t.deadline:'')+(overdue?' ⚠️過期':'')+'</div></div>';
       if(t.tags&&t.tags.length)detailHtml+='<div class="todo-detail-row"><div class="todo-detail-label">Tags</div><div class="todo-detail-val">'+t.tags.join('、')+'</div></div>';
-      h+='<div class="todo-card'+(t.done?' done':'')+'"><div class="todo-card-hd"><div class="todo-check'+(t.done?' checked':'')+'" data-toggle="'+t.id+'">'+(t.done?'✓':'')+'</div><div class="todo-main"><div class="todo-title">'+title+(t.done?'<span class="todo-done-badge">已完成</span>':'')+'</div><div class="todo-meta"><span class="todo-cat">'+t.cat+'</span>'+tagsHtml+'<span class="sev '+sevCls+'">'+t.sev+'</span>'+dlHtml+'</div>'+preview+expandHint+'</div><div class="todo-acts"><button class="bico" data-todo-edit="'+t.id+'">✏️</button><button class="bico d" data-del="'+t.id+'" data-dtype="todo">🗑️</button></div></div><div class="todo-detail" id="detail-'+t.id+'">'+detailHtml+'</div></div>';}h+='</div>';}
+      h+='<div class="todo-card'+(t.done?' done':'')+'"><div class="todo-card-hd"><div class="todo-check'+(t.done?' checked':'')+'" data-toggle="'+t.id+'">'+(t.done?'✓':'')+'</div><div class="todo-main"><div class="todo-title">'+title+(t.done?'<span class="todo-done-badge">已完成</span>':'')+'</div><div class="todo-meta"><span class="todo-cat">'+t.cat+'</span>'+tagsHtml+'<span class="sev '+sevCls+'">'+t.sev+'</span>'+dlHtml+'</div>'+ownerBadge+preview+expandHint+'</div><div class="todo-acts"><button class="bico" data-todo-edit="'+t.id+'">✏️</button><button class="bico d" data-del="'+t.id+'" data-dtype="todo">🗑️</button></div></div><div class="todo-detail" id="detail-'+t.id+'">'+detailHtml+'</div></div>';}h+='</div>';}
   document.getElementById('main').innerHTML=h;
   var fss=document.getElementById('fs-status');if(fss)fss.addEventListener('change',function(){todoFilterStatus=this.value;renderMain();});
   var fsc=document.getElementById('fs-cat');if(fsc)fsc.addEventListener('change',function(){todoFilterCat=this.value;renderMain();});
   var fsv=document.getElementById('fs-sev');if(fsv)fsv.addEventListener('change',function(){todoFilterSev=this.value;renderMain();});
+  var fso=document.getElementById('fs-owner');if(fso)fso.addEventListener('change',function(){todoFilterOwner=this.value;renderMain();});
   var bat=document.getElementById('btn-add-todo');if(bat)bat.addEventListener('click',openTodoCreate);
   var bate=document.getElementById('btn-add-todo-empty');if(bate)bate.addEventListener('click',openTodoCreate);
   var toggles=document.querySelectorAll('[data-toggle]');for(var i=0;i<toggles.length;i++)(function(b){b.addEventListener('click',function(){toggleTodo(b.getAttribute('data-toggle'));});})(toggles[i]);
   var tes=document.querySelectorAll('[data-todo-edit]');for(var i=0;i<tes.length;i++)(function(b){b.addEventListener('click',function(){openTodoEdit(b.getAttribute('data-todo-edit'));});})(tes[i]);
+  var ots=document.querySelectorAll('[data-owner-toggle]');for(var i=0;i<ots.length;i++)(function(b){b.addEventListener('click',function(){toggleOwner(b.getAttribute('data-owner-toggle'));});})(ots[i]);
   var exps=document.querySelectorAll('[data-expand]');for(var i=0;i<exps.length;i++)(function(b){b.addEventListener('click',function(){expandTodo(b.getAttribute('data-expand'));});})(exps[i]);
   bindEditDel();
 }
 function expandTodo(id){var det=document.getElementById('detail-'+id);if(!det)return;var card=det.parentNode;var hint=card.querySelector('.todo-expand-hint');if(det.classList.contains('open')){det.classList.remove('open');card.classList.remove('expanded');if(hint)hint.textContent='▶ 展開詳情';}else{det.classList.add('open');card.classList.add('expanded');if(hint)hint.textContent='▼ 收起詳情';}}
+function toggleOwner(id){for(var i=0;i<todos.length;i++){if(todos[i].id===id){todos[i].owner=(todos[i].owner==='me'||!todos[i].owner)?'them':'me';break;}}save();renderMain();}
 function toggleTodo(id){for(var i=0;i<todos.length;i++)if(todos[i].id===id){todos[i].done=!todos[i].done;break;}save();renderMain();}
 
 // ── BUDGET ──
@@ -585,6 +630,174 @@ function confirmDel(){
 function bindEditDel(){
   var ebs=document.querySelectorAll('[data-edit]');for(var i=0;i<ebs.length;i++)(function(b){b.addEventListener('click',function(){openEdit(b.getAttribute('data-edit'));});})(ebs[i]);
   var dbs=document.querySelectorAll('[data-del]');for(var i=0;i<dbs.length;i++)(function(b){b.addEventListener('click',function(){openDel(b.getAttribute('data-del'),b.getAttribute('data-dtype'));});})(dbs[i]);
+}
+
+
+// ── EXPORT ──
+var exportFormat = '';
+function openExport(){
+  document.getElementById('export-overlay').style.display='flex';
+  document.getElementById('export-output').style.display='none';
+  document.getElementById('exp-copy-confirm').style.display='none';
+}
+function closeExport(){document.getElementById('export-overlay').style.display='none';}
+
+function doExportJSON(){
+  exportFormat='json';
+  var data=listings.map(function(l){return {
+    id:l.id, address:l.address, source:l.source,
+    rent:l.rent?parseInt(l.rent):null,
+    size:l.size?parseInt(l.size):null,
+    floor:l.floor||null, age:l.age?parseInt(l.age):null,
+    lift:l.lift, flataccess:l.flataccess, wetdry:l.wetdry, furnished:l.furnished,
+    furnItems:l.furnItems||[],
+    landlordInfo:l.landlordInfo||'', landlordNotes:l.landlordNotes||'',
+    stationDist:l.stationDist||'', facilities:l.facilities||'',
+    notes:l.notes||''
+  };});
+  var out=JSON.stringify(data,null,2);
+  showExportOutput('JSON（'+data.length+' 個租盤）', out);
+}
+
+function doExportCSV(){
+  exportFormat='csv';
+  var headers=['編號','地址','搵盤途徑','租金(HK$)','呎數','樓層','樓齡','電梯','平台直達','乾濕分離','包家具','家具','業主背景','業主注意','車站距離','附近設施','備注'];
+  var rows=[headers.join(',')];
+  for(var i=0;i<listings.length;i++){
+    var l=listings[i];
+    var row=[
+      l.id,
+      '"'+(l.address||'').replace(/"/g,'""')+'"',
+      '"'+(l.source||'')+'"',
+      l.rent||'',
+      l.size||'',
+      '"'+(l.floor||'')+'"',
+      l.age||'',
+      l.lift==='Y'?'是':l.lift==='N'?'否':'',
+      l.flataccess==='Y'?'是':l.flataccess==='N'?'否':'',
+      l.wetdry==='Y'?'是':l.wetdry==='N'?'否':'',
+      l.furnished==='Y'?'是':l.furnished==='N'?'否':'',
+      '"'+((l.furnItems||[]).join('、'))+'"',
+      '"'+(l.landlordInfo||'').replace(/"/g,'""')+'"',
+      '"'+(l.landlordNotes||'').replace(/"/g,'""')+'"',
+      '"'+(l.stationDist||'').replace(/"/g,'""')+'"',
+      '"'+(l.facilities||'').replace(/"/g,'""')+'"',
+      '"'+(l.notes||'').replace(/"/g,'""')+'"'
+    ];
+    rows.push(row.join(','));
+  }
+  showExportOutput('CSV（'+listings.length+' 個租盤）', rows.join('\n'));
+}
+
+function doExportTXT(){
+  exportFormat='txt';
+  var lines=[];
+  lines.push('=== 租盤記錄 (' + listings.length + ' 個) ===');
+  lines.push('匯出時間：'+makeTs());
+  lines.push('');
+  for(var i=0;i<listings.length;i++){
+    var l=listings[i];
+    lines.push('─────────────────────');
+    lines.push('【'+l.id+'】 '+( l.address||'（未填地址）'));
+    if(l.rent) lines.push('租金：HK
+document.getElementById('tab-list').addEventListener('click',function(){currentTab='list';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+document.getElementById('tab-todo').addEventListener('click',function(){currentTab='todo';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+document.getElementById('tab-budget').addEventListener('click',function(){currentTab='budget';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+document.getElementById('tab-log').addEventListener('click',function(){currentTab='log';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+
+document.getElementById('form-cancel').addEventListener('click',closeForm);
+document.getElementById('form-save').addEventListener('click',saveForm);
+document.getElementById('todo-cancel').addEventListener('click',closeTodo);
+document.getElementById('todo-save').addEventListener('click',saveTodo);
+document.getElementById('budget-cancel').addEventListener('click',closeBudget);
+document.getElementById('budget-save').addEventListener('click',saveBudget);
+document.getElementById('expense-cancel').addEventListener('click',closeExpense);
+document.getElementById('expense-save').addEventListener('click',saveExpense);
+document.getElementById('del-cancel').addEventListener('click',closeDel);
+document.getElementById('del-confirm').addEventListener('click',confirmDel);
+document.getElementById('export-close').addEventListener('click',closeExport);
+document.getElementById('export-overlay').addEventListener('click',function(e){if(e.target===this)closeExport();});
+document.getElementById('exp-json').addEventListener('click',doExportJSON);
+document.getElementById('exp-csv').addEventListener('click',doExportCSV);
+document.getElementById('exp-txt').addEventListener('click',doExportTXT);
+document.getElementById('exp-copy').addEventListener('click',copyExport);
+document.getElementById('exp-download').addEventListener('click',downloadExport);
+document.getElementById('form-overlay').addEventListener('click',function(e){if(e.target===this)closeForm();});
+document.getElementById('todo-overlay').addEventListener('click',function(e){if(e.target===this)closeTodo();});
+document.getElementById('budget-overlay').addEventListener('click',function(e){if(e.target===this)closeBudget();});
+document.getElementById('expense-overlay').addEventListener('click',function(e){if(e.target===this)closeExpense();});
+document.getElementById('del-overlay').addEventListener('click',function(e){if(e.target===this)closeDel();});
+
+var ynPairs=[['yy-lift','lift','Y'],['yn-lift','lift','N'],['yy-flat','flat','Y'],['yn-flat','flat','N'],['yy-wd','wd','Y'],['yn-wd','wd','N'],['yy-furn','furn','Y'],['yn-furn','furn','N']];
+for(var i=0;i<ynPairs.length;i++)(function(row){var el=document.getElementById(row[0]);if(el)el.addEventListener('click',function(){setYN(row[1],row[2]);});})(ynPairs[i]);
+var dchips=document.querySelectorAll('#fchips .fc[data-f]');for(var i=0;i<dchips.length;i++)(function(ch){ch.addEventListener('click',function(){toggleFurn(ch,ch.getAttribute('data-f'));});})(dchips[i]);
+document.getElementById('xfb').addEventListener('click',function(){var inp=document.getElementById('xfi'),v=inp.value.trim();if(!v)return;inp.value='';if(furnItems.indexOf(v)>=0)return;furnItems.push(v);addExtraChip(v);});
+document.getElementById('xfi').addEventListener('keydown',function(e){if(e.keyCode===13){e.preventDefault();document.getElementById('xfb').click();}});
+document.getElementById('td-cat').addEventListener('change',function(){var cat=this.value;document.getElementById('td-custom-cat-fg').style.display=cat==='其他'?'block':'none';tdTags=[];buildTodoTagChips(cat,[]);});
+document.getElementById('td-tag-add').addEventListener('click',function(){var inp=document.getElementById('td-tag-input'),v=inp.value.trim();if(!v)return;inp.value='';if(tdTags.indexOf(v)>=0)return;tdTags.push(v);addTodoExtraChip(v,true);});
+document.getElementById('td-tag-input').addEventListener('keydown',function(e){if(e.keyCode===13){e.preventDefault();document.getElementById('td-tag-add').click();}});
+
+load();renderMain();
+</script>
+</body>
+</html>
++parseInt(l.rent).toLocaleString()+'/月');
+    if(l.size||l.floor||l.age){
+      var meta=[];
+      if(l.size) meta.push(l.size+'呎');
+      if(l.floor) meta.push(l.floor+'樓');
+      if(l.age) meta.push('樓齡'+l.age+'年');
+      lines.push('基本：'+meta.join('　'));
+    }
+    if(l.source) lines.push('來源：'+l.source);
+    var yns=[];
+    if(l.lift==='Y') yns.push('有電梯');else if(l.lift==='N') yns.push('無電梯');
+    if(l.flataccess==='Y') yns.push('平台直達');else if(l.flataccess==='N') yns.push('非平台直達');
+    if(l.wetdry==='Y') yns.push('乾濕分離');else if(l.wetdry==='N') yns.push('無乾濕分離');
+    if(l.furnished==='Y'){yns.push('包家具');if(l.furnItems&&l.furnItems.length)yns.push('（'+l.furnItems.join('、')+'）');}
+    else if(l.furnished==='N') yns.push('不包家具');
+    if(yns.length) lines.push('設施：'+yns.join('　'));
+    if(l.stationDist) lines.push('交通：'+l.stationDist);
+    if(l.facilities) lines.push('設施：'+l.facilities);
+    if(l.landlordInfo) lines.push('業主：'+l.landlordInfo);
+    if(l.landlordNotes) lines.push('業主注意：'+l.landlordNotes);
+    if(l.notes) lines.push('備注：'+l.notes);
+    lines.push('');
+  }
+  showExportOutput('純文字（可直接貼入Chat）', lines.join('\n'));
+}
+
+function showExportOutput(label, text){
+  document.getElementById('export-output-label').textContent=label;
+  document.getElementById('export-textarea').value=text;
+  document.getElementById('export-output').style.display='block';
+  document.getElementById('exp-copy-confirm').style.display='none';
+}
+
+function copyExport(){
+  var ta=document.getElementById('export-textarea');
+  ta.select();
+  try{
+    document.execCommand('copy');
+    document.getElementById('exp-copy-confirm').style.display='block';
+    setTimeout(function(){document.getElementById('exp-copy-confirm').style.display='none';},2000);
+  }catch(e){
+    navigator.clipboard&&navigator.clipboard.writeText(ta.value);
+    document.getElementById('exp-copy-confirm').style.display='block';
+    setTimeout(function(){document.getElementById('exp-copy-confirm').style.display='none';},2000);
+  }
+}
+
+function downloadExport(){
+  var text=document.getElementById('export-textarea').value;
+  var ext=exportFormat==='json'?'json':exportFormat==='csv'?'csv':'txt';
+  var mime=exportFormat==='json'?'application/json':exportFormat==='csv'?'text/csv':'text/plain';
+  var blob=new Blob([text],{type:mime+';charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='rental_export_'+makeTs().replace(/[\/: ]/g,'_')+'.'+ext;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
 // ── static events ──
