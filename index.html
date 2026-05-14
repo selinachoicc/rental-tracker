@@ -341,6 +341,17 @@ canvas{display:block;margin:0 auto}
       </select>
     </div>
   </div>
+  <div class="fr2">
+    <div class="fg"><label>狀態</label>
+      <select id="sh-status">
+        <option value="選購中">選購中</option>
+        <option value="已購買">已購買</option>
+        <option value="送貨中">送貨中</option>
+        <option value="已送達">已送達</option>
+      </select>
+    </div>
+    <div class="fg"></div>
+  </div>
   <div class="fg" id="sh-link-fg"><label>網頁連結（選填）</label><input id="sh-link" placeholder="https://…"/></div>
   <div class="fg"><label>備注</label><input id="sh-note" placeholder="備注…"/></div>
   <div class="sl">連結預算</div>
@@ -414,7 +425,7 @@ var idCtr=100,todoCtr=200,biCtr=300,eiCtr=400,shCtr=500;
 var totalBudget=0;
 var currentTab='list',sortBy='id',editingId=null,deletingId=null,deletingType='rental';
 var todoEditId=null,todoFilterStatus='all',todoFilterCat='all',todoFilterSev='all',todoFilterOwner='all';
-var shopEditId=null,shopFilterCat='all';
+var shopEditId=null,shopFilterCat='all',shopFilterStatus='all';
 var budgetEditId=null,expenseEditId=null;
 var yn={lift:'?',flat:'?',wd:'?',furn:'?'};
 var furnItems=[],tdTags=[];
@@ -507,6 +518,7 @@ function toggleTodo(id){for(var i=0;i<todos.length;i++)if(todos[i].id===id){todo
 function renderShopping(){
   var items=shoppingItems.slice();
   if(shopFilterCat!=='all')items=items.filter(function(i){return i.cat===shopFilterCat;});
+  if(shopFilterStatus!=='all')items=items.filter(function(i){return (i.status||'選購中')===shopFilterStatus;});
   var total=0,budgeted=0,count=shoppingItems.length;
   for(var i=0;i<shoppingItems.length;i++){
     var v=(parseInt(shoppingItems[i].price)||0)*(parseInt(shoppingItems[i].qty)||1);
@@ -526,7 +538,7 @@ function renderShopping(){
       '<label>類別：</label>'+
       '<select id="sf-shop-cat">'+cats.map(function(cat){return '<option value="'+cat+'"'+(shopFilterCat===cat?' selected':'')+'>'+( cat==='all'?'全部':cat)+'</option>';}).join('')+
       '</select>'+
-      '<button class="btn-nv" id="btn-add-shop" style="margin-left:auto">＋ 新增物資</button>'+
+      '<label>狀態：</label>'+'<select id="sf-shop-status"><option value="all"'+(shopFilterStatus==="all"?' selected':'')+'>全部</option><option value="選購中"'+(shopFilterStatus==="選購中"?' selected':'')+'>選購中</option><option value="已購買"'+(shopFilterStatus==="已購買"?' selected':'')+'>已購買</option><option value="送貨中"'+(shopFilterStatus==="送貨中"?' selected':'')+'>送貨中</option><option value="已送達"'+(shopFilterStatus==="已送達"?' selected':'')+'>已送達</option></select>'+'<button class="btn-nv" id="btn-add-shop" style="margin-left:auto">＋ 新增物資</button>'+
     '</div>';
 
   if(!items.length){
@@ -547,7 +559,7 @@ function renderShopping(){
         '<div class="shop-price">'+fmt(total_price)+(it.qty>1?' ('+it.qty+'件 × '+fmt(it.price)+')':'')+'</div>'+
         '<div class="shop-meta">'+
           '<span class="shop-cat">'+it.cat+'</span>'+
-          '<span class="pill" style="background:#eee;color:var(--txt2)">'+it.channel+'</span>'+
+          '<span class="pill" style="background:#eee;color:var(--txt2)">'+it.channel+'</span>'+'<span class="pill" style="background:'+(it.status==="已送達"?'#c8ecd4':it.status==="已購買"?'#e6f4ec':it.status==="送貨中"?'#fff3cd':'#e8e9f3')+';color:'+(it.status==="已送達"||it.status==="已購買"?'#1a6b3a':it.status==="送貨中"?'#B7770D':'#5a5a78')+'">'+( it.status||'選購中')+'</span>'+
         '</div>'+
         (it.size?'<div class="shop-detail">📐 '+it.size+'</div>':'')+
         (it.note?'<div class="shop-detail">📝 '+it.note+'</div>':'')+
@@ -563,6 +575,7 @@ function renderShopping(){
   document.getElementById('main').innerHTML=h;
 
   var fsc=document.getElementById('sf-shop-cat');if(fsc)fsc.addEventListener('change',function(){shopFilterCat=this.value;renderShopping();});
+  var fss=document.getElementById('sf-shop-status');if(fss)fss.addEventListener('change',function(){shopFilterStatus=this.value;renderShopping();});
   var bas=document.getElementById('btn-add-shop');if(bas)bas.addEventListener('click',function(){openShopForm(null);});
   var base=document.getElementById('btn-add-shop-empty');if(base)base.addEventListener('click',function(){openShopForm(null);});
   var sheds=document.querySelectorAll('[data-sh-edit]');for(var i=0;i<sheds.length;i++)(function(b){b.addEventListener('click',function(){openShopForm(b.getAttribute('data-sh-edit'));});})(sheds[i]);
@@ -606,6 +619,7 @@ function openShopForm(id){
   document.getElementById('sh-channel').value=it?it.channel:'實體店';
   document.getElementById('sh-link').value=it?it.link||'':'';
   document.getElementById('sh-note').value=it?it.note||'':'';
+  document.getElementById('sh-status').value=it?it.status||'選購中':'選購中';
   document.getElementById('sh-budget-chk').checked=it?!!it.inBudget:false;
   document.getElementById('sh-budget-cat').value=it?it.budgetCat||'傢俬':'傢俬';
   document.getElementById('sh-budget-cat-fg').style.display=(it&&it.inBudget)?'block':'none';
@@ -626,9 +640,10 @@ function saveShop(){
   var channel=document.getElementById('sh-channel').value;
   var link=document.getElementById('sh-link').value.trim();
   var note=document.getElementById('sh-note').value.trim();
+  var status=document.getElementById('sh-status').value;
   var inBudget=document.getElementById('sh-budget-chk').checked;
   var budgetCat=document.getElementById('sh-budget-cat').value;
-  var rec={id:shopEditId||makeShId(),name:name,cat:cat,customCat:customCat,price:price,qty:qty,size:size,channel:channel,link:link,note:note,inBudget:inBudget,budgetCat:budgetCat};
+  var rec={id:shopEditId||makeShId(),name:name,cat:cat,customCat:customCat,price:price,qty:qty,size:size,channel:channel,link:link,note:note,status:status,inBudget:inBudget,budgetCat:budgetCat};
   if(shopEditId){
     for(var i=0;i<shoppingItems.length;i++)if(shoppingItems[i].id===shopEditId){shoppingItems[i]=rec;break;}
     // update expense if budgeted
