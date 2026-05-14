@@ -164,6 +164,23 @@ canvas{display:block;margin:0 auto}
 .la.create{background:#c8ecd4;color:var(--suc)}
 .la.update{background:var(--nvp);color:var(--nv)}
 .la.delete{background:#ffd4d0;color:var(--dng)}
+
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.shop-card{background:#ffffff;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px}
+.shop-card.budgeted{border-color:#1a6b3a;background:#f6fdf8}
+.shop-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.shop-name{font-size:14px;font-weight:700;color:var(--txt);flex:1;margin-right:8px}
+.shop-acts{display:flex;gap:5px;flex-shrink:0}
+.shop-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.shop-price{font-size:18px;font-weight:700;color:var(--nv);margin-bottom:6px}
+.shop-cat{font-size:11px;background:var(--nv);color:#fff;border-radius:999px;padding:2px 8px;font-weight:600}
+.shop-detail{font-size:11px;color:var(--txt2);margin-top:3px}
+.shop-link{font-size:11px;color:var(--nv);text-decoration:underline;word-break:break-all;margin-top:3px;display:block}
+.budget-toggle{display:flex;align-items:center;gap:7px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);cursor:pointer}
+.budget-toggle input{width:16px;height:16px;cursor:pointer;accent-color:var(--suc)}
+.budget-toggle-label{font-size:12px;font-weight:600;color:var(--txt2)}
+.budget-toggle.on .budget-toggle-label{color:var(--suc)}
+.shop-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -173,7 +190,7 @@ canvas{display:block;margin:0 auto}
     <button class="tab on" id="tab-list">租盤列表</button>
     <button class="tab" id="tab-todo">待辦事項</button>
     <button class="tab" id="tab-budget">預算及開支</button>
-    <button class="tab" id="tab-log">操作記錄</button>
+    <button class="tab" id="tab-shopping">採購物資</button><button class="tab" id="tab-log">操作記錄</button>
   </div>
   <div id="main"></div>
 </div>
@@ -288,6 +305,65 @@ canvas{display:block;margin:0 auto}
 </div>
 </div>
 
+
+<!-- SHOPPING FORM -->
+<div class="overlay" id="shop-overlay" style="display:none">
+<div class="modal">
+  <div class="modal-title" id="shop-form-title">新增採購物資</div>
+  <div class="sl">物品資料</div>
+  <div class="fg"><label>物品名稱</label><input id="sh-name" placeholder="例：床褥、洗衣機、掃把…"/></div>
+  <div class="fr2">
+    <div class="fg"><label>類別</label>
+      <select id="sh-cat">
+        <option value="清潔">清潔</option>
+        <option value="收納">收納</option>
+        <option value="床上用品">床上用品</option>
+        <option value="枱凳">枱凳</option>
+        <option value="電器">電器</option>
+        <option value="廚房">廚房</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="fg"><label>自訂類別（選填）</label><input id="sh-custom-cat" placeholder="自訂分類…"/></div>
+  </div>
+  <div class="fr2">
+    <div class="fg"><label>預計價錢（HK$）</label><input id="sh-price" type="number" placeholder="0"/></div>
+    <div class="fg"><label>數量</label><input id="sh-qty" type="number" placeholder="1" value="1"/></div>
+  </div>
+  <div class="fr2">
+    <div class="fg"><label>大小／尺寸</label><input id="sh-size" placeholder="例：50×60cm、單人、…"/></div>
+    <div class="fg"><label>採購方式</label>
+      <select id="sh-channel">
+        <option value="實體店">實體店</option>
+        <option value="網購">網購</option>
+        <option value="二手">二手</option>
+        <option value="未決定">未決定</option>
+      </select>
+    </div>
+  </div>
+  <div class="fg" id="sh-link-fg"><label>網頁連結（選填）</label><input id="sh-link" placeholder="https://…"/></div>
+  <div class="fg"><label>備注</label><input id="sh-note" placeholder="備注…"/></div>
+  <div class="sl">連結預算</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+    <input type="checkbox" id="sh-budget-chk" style="width:16px;height:16px;cursor:pointer;accent-color:var(--suc)"/>
+    <label for="sh-budget-chk" style="font-size:13px;font-weight:600;color:var(--txt);cursor:pointer">計入預算開支</label>
+  </div>
+  <div id="sh-budget-cat-fg" style="display:none">
+    <div class="fg"><label>預算分類</label>
+      <select id="sh-budget-cat">
+        <option value="傢俬">傢俬</option>
+        <option value="搬屋費">搬屋費</option>
+        <option value="雜項">雜項</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+  </div>
+  <div class="modal-acts">
+    <button class="btn-outline" id="shop-cancel">取消</button>
+    <button class="btn-nv" id="shop-save">新增物資</button>
+  </div>
+</div>
+</div>
 <!-- DELETE CONFIRM -->
 <div class="overlay" id="del-overlay" style="display:none">
 <div class="modal" style="max-width:380px">
@@ -333,11 +409,12 @@ canvas{display:block;margin:0 auto}
 </div>
 <script>
 // ── data ──
-var listings=[],actLog=[],todos=[],budgetItems=[],expenseItems=[];
-var idCtr=100,todoCtr=200,biCtr=300,eiCtr=400;
+var listings=[],actLog=[],todos=[],budgetItems=[],expenseItems=[],shoppingItems=[];
+var idCtr=100,todoCtr=200,biCtr=300,eiCtr=400,shCtr=500;
 var totalBudget=0;
 var currentTab='list',sortBy='id',editingId=null,deletingId=null,deletingType='rental';
 var todoEditId=null,todoFilterStatus='all',todoFilterCat='all',todoFilterSev='all',todoFilterOwner='all';
+var shopEditId=null,shopFilterCat='all';
 var budgetEditId=null,expenseEditId=null;
 var yn={lift:'?',flat:'?',wd:'?',furn:'?'};
 var furnItems=[],tdTags=[];
@@ -345,12 +422,13 @@ var DFURN=['床','雪櫃','洗衣機','微波爐','梳化'];
 var CAT_TAGS={'搬屋':['物流','收納','丟棄物品','聯絡搬屋公司'],'租務':['Contact舊業主','Contact agent','簽約','睇盤'],'其他':[]};
 var CAT_COLORS=['#1B1F4B','#C0392B','#1a6b3a','#B7770D','#6c3483','#0e6251','#784212','#1a5276'];
 
-function save(){try{localStorage.setItem('rt_v14',JSON.stringify({listings:listings,actLog:actLog,todos:todos,budgetItems:budgetItems,expenseItems:expenseItems,totalBudget:totalBudget,idCtr:idCtr,todoCtr:todoCtr,biCtr:biCtr,eiCtr:eiCtr}));}catch(e){}}
-function load(){var raw;try{raw=localStorage.getItem('rt_v14');}catch(e){}if(raw){var d=JSON.parse(raw);listings=d.listings||[];actLog=d.actLog||[];todos=d.todos||[];budgetItems=d.budgetItems||[];expenseItems=d.expenseItems||[];totalBudget=d.totalBudget||0;idCtr=d.idCtr||100;todoCtr=d.todoCtr||200;biCtr=d.biCtr||300;eiCtr=d.eiCtr||400;}}
+function save(){try{localStorage.setItem('rt_v14',JSON.stringify({listings:listings,actLog:actLog,todos:todos,budgetItems:budgetItems,expenseItems:expenseItems,shoppingItems:shoppingItems,totalBudget:totalBudget,idCtr:idCtr,todoCtr:todoCtr,biCtr:biCtr,eiCtr:eiCtr,shCtr:shCtr}));}catch(e){}}
+function load(){var raw;try{raw=localStorage.getItem('rt_v14');}catch(e){}if(raw){var d=JSON.parse(raw);listings=d.listings||[];actLog=d.actLog||[];todos=d.todos||[];budgetItems=d.budgetItems||[];expenseItems=d.expenseItems||[];shoppingItems=d.shoppingItems||[];totalBudget=d.totalBudget||0;idCtr=d.idCtr||100;todoCtr=d.todoCtr||200;biCtr=d.biCtr||300;eiCtr=d.eiCtr||400;shCtr=d.shCtr||500;}}
 function makeId(){idCtr++;return 'RP-'+idCtr;}
 function makeTodoId(){todoCtr++;return 'TD-'+todoCtr;}
 function makeBiId(){biCtr++;return 'BI-'+biCtr;}
 function makeEiId(){eiCtr++;return 'EI-'+eiCtr;}
+function makeShId(){shCtr++;return 'SH-'+shCtr;}
 function makeTs(){var d=new Date(),p=function(n){return n<10?'0'+n:''+n;};return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());}
 function pushLog(a,id,addr){actLog.unshift({a:a,id:id,addr:addr,t:makeTs()});if(actLog.length>200)actLog=actLog.slice(0,200);}
 function today(){var d=new Date();return d.toISOString().slice(0,10);}
@@ -364,6 +442,7 @@ function renderMain(){
   if(currentTab==='log'){renderLog();return;}
   if(currentTab==='todo'){renderTodo();return;}
   if(currentTab==='budget'){renderBudget();return;}
+  if(currentTab==='shopping'){renderShopping();return;}
   renderListings();
 }
 
@@ -424,6 +503,154 @@ function toggleOwner(id){for(var i=0;i<todos.length;i++){if(todos[i].id===id){to
 function toggleTodo(id){for(var i=0;i<todos.length;i++)if(todos[i].id===id){todos[i].done=!todos[i].done;break;}save();renderMain();}
 
 // ── BUDGET ──
+
+function renderShopping(){
+  var items=shoppingItems.slice();
+  if(shopFilterCat!=='all')items=items.filter(function(i){return i.cat===shopFilterCat;});
+  var total=0,budgeted=0,count=shoppingItems.length;
+  for(var i=0;i<shoppingItems.length;i++){
+    var v=(parseInt(shoppingItems[i].price)||0)*(parseInt(shoppingItems[i].qty)||1);
+    total+=v;
+    if(shoppingItems[i].inBudget)budgeted+=v;
+  }
+  // collect all cats for filter
+  var cats=['all'];
+  for(var i=0;i<shoppingItems.length;i++){if(cats.indexOf(shoppingItems[i].cat)<0)cats.push(shoppingItems[i].cat);}
+
+  var h='<div class="shop-summary">'+
+    '<div class="stat"><div class="stat-l">物品數量</div><div class="stat-v">'+count+'</div></div>'+
+    '<div class="stat"><div class="stat-l">預計總額</div><div class="stat-v">'+fmt(total)+'</div></div>'+
+    '<div class="stat"><div class="stat-l">已計入預算</div><div class="stat-v good">'+fmt(budgeted)+'</div></div>'+
+    '</div>'+
+    '<div class="filter-bar">'+
+      '<label>類別：</label>'+
+      '<select id="sf-shop-cat">'+cats.map(function(cat){return '<option value="'+cat+'"'+(shopFilterCat===cat?' selected':'')+'>'+( cat==='all'?'全部':cat)+'</option>';}).join('')+
+      '</select>'+
+      '<button class="btn-nv" id="btn-add-shop" style="margin-left:auto">＋ 新增物資</button>'+
+    '</div>';
+
+  if(!items.length){
+    h+='<div class="empty"><div style="font-size:38px;margin-bottom:10px">🛒</div><div style="margin-bottom:14px;font-weight:700">'+(shoppingItems.length?'沒有符合條件的物資':'未有採購記錄')+'</div>'+(shoppingItems.length?'':'<button class="btn-nv" id="btn-add-shop-empty">新增第一項物資</button>')+'</div>';
+  } else {
+    h+='<div class="shop-grid">';
+    for(var i=0;i<items.length;i++){
+      var it=items[i];
+      var total_price=(parseInt(it.price)||0)*(parseInt(it.qty)||1);
+      h+='<div class="shop-card'+(it.inBudget?' budgeted':'')+'">'+
+        '<div class="shop-hd">'+
+          '<span class="shop-name">'+it.name+'</span>'+
+          '<div class="shop-acts">'+
+            '<button class="bico" data-sh-edit="'+it.id+'">✏️</button>'+
+            '<button class="bico d" data-del="'+it.id+'" data-dtype="shopping">🗑️</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="shop-price">'+fmt(total_price)+(it.qty>1?' ('+it.qty+'件 × '+fmt(it.price)+')':'')+'</div>'+
+        '<div class="shop-meta">'+
+          '<span class="shop-cat">'+it.cat+'</span>'+
+          '<span class="pill" style="background:#eee;color:var(--txt2)">'+it.channel+'</span>'+
+        '</div>'+
+        (it.size?'<div class="shop-detail">📐 '+it.size+'</div>':'')+
+        (it.note?'<div class="shop-detail">📝 '+it.note+'</div>':'')+
+        (it.link?'<a class="shop-link" href="'+it.link+'" target="_blank">🔗 '+it.link.slice(0,40)+(it.link.length>40?'…':'')+'</a>':'')+
+        '<label class="budget-toggle'+(it.inBudget?' on':'')+'">'+
+          '<input type="checkbox" class="sh-budget-toggle" data-sh-id="'+it.id+'"'+(it.inBudget?' checked':'')+' style="width:16px;height:16px;cursor:pointer;accent-color:var(--suc)"/>'+
+          '<span class="budget-toggle-label">'+(it.inBudget?'✓ 已計入預算':'計入預算')+'</span>'+
+        '</label>'+
+      '</div>';
+    }
+    h+='</div>';
+  }
+  document.getElementById('main').innerHTML=h;
+
+  var fsc=document.getElementById('sf-shop-cat');if(fsc)fsc.addEventListener('change',function(){shopFilterCat=this.value;renderShopping();});
+  var bas=document.getElementById('btn-add-shop');if(bas)bas.addEventListener('click',function(){openShopForm(null);});
+  var base=document.getElementById('btn-add-shop-empty');if(base)base.addEventListener('click',function(){openShopForm(null);});
+  var sheds=document.querySelectorAll('[data-sh-edit]');for(var i=0;i<sheds.length;i++)(function(b){b.addEventListener('click',function(){openShopForm(b.getAttribute('data-sh-edit'));});})(sheds[i]);
+  var btogs=document.querySelectorAll('.sh-budget-toggle');for(var i=0;i<btogs.length;i++)(function(b){b.addEventListener('change',function(){toggleShopBudget(b.getAttribute('data-sh-id'),b.checked);});})(btogs[i]);
+  bindEditDel();
+}
+
+function toggleShopBudget(id,checked){
+  for(var i=0;i<shoppingItems.length;i++){
+    if(shoppingItems[i].id===id){
+      var it=shoppingItems[i];
+      it.inBudget=checked;
+      if(checked){
+        // add to expense items
+        var existing=false;
+        for(var j=0;j<expenseItems.length;j++){if(expenseItems[j].shopRef===id){existing=true;break;}}
+        if(!existing){
+          var eid=makeEiId();
+          expenseItems.push({id:eid,shopRef:id,name:it.name,cat:it.budgetCat||'雜項',amt:(parseInt(it.price)||0)*(parseInt(it.qty)||1),date:today(),note:'採購物資'});
+        }
+      } else {
+        expenseItems=expenseItems.filter(function(e){return e.shopRef!==id;});
+      }
+      break;
+    }
+  }
+  save();renderShopping();
+}
+
+function openShopForm(id){
+  shopEditId=id;
+  var it=null;if(id)for(var i=0;i<shoppingItems.length;i++)if(shoppingItems[i].id===id){it=shoppingItems[i];break;}
+  document.getElementById('shop-form-title').textContent=id?'編輯採購物資':'新增採購物資';
+  document.getElementById('shop-save').textContent=id?'儲存更改':'新增物資';
+  document.getElementById('sh-name').value=it?it.name:'';
+  document.getElementById('sh-cat').value=it?it.cat:'清潔';
+  document.getElementById('sh-custom-cat').value=it?it.customCat||'':'';
+  document.getElementById('sh-price').value=it?it.price:'';
+  document.getElementById('sh-qty').value=it?it.qty:1;
+  document.getElementById('sh-size').value=it?it.size||'':'';
+  document.getElementById('sh-channel').value=it?it.channel:'實體店';
+  document.getElementById('sh-link').value=it?it.link||'':'';
+  document.getElementById('sh-note').value=it?it.note||'':'';
+  document.getElementById('sh-budget-chk').checked=it?!!it.inBudget:false;
+  document.getElementById('sh-budget-cat').value=it?it.budgetCat||'傢俬':'傢俬';
+  document.getElementById('sh-budget-cat-fg').style.display=(it&&it.inBudget)?'block':'none';
+  document.getElementById('sh-link-fg').style.display=(it&&it.channel==='網購')||(!it)?'none':'none';
+  var ch=document.getElementById('sh-channel');
+  document.getElementById('sh-link-fg').style.display=ch.value==='網購'?'block':'none';
+  document.getElementById('shop-overlay').style.display='flex';
+}
+function closeShop(){document.getElementById('shop-overlay').style.display='none';}
+function saveShop(){
+  var name=document.getElementById('sh-name').value.trim();if(!name)return;
+  var cat=document.getElementById('sh-cat').value;
+  var customCat=document.getElementById('sh-custom-cat').value.trim();
+  if(customCat)cat=customCat;
+  var price=document.getElementById('sh-price').value;
+  var qty=parseInt(document.getElementById('sh-qty').value)||1;
+  var size=document.getElementById('sh-size').value.trim();
+  var channel=document.getElementById('sh-channel').value;
+  var link=document.getElementById('sh-link').value.trim();
+  var note=document.getElementById('sh-note').value.trim();
+  var inBudget=document.getElementById('sh-budget-chk').checked;
+  var budgetCat=document.getElementById('sh-budget-cat').value;
+  var rec={id:shopEditId||makeShId(),name:name,cat:cat,customCat:customCat,price:price,qty:qty,size:size,channel:channel,link:link,note:note,inBudget:inBudget,budgetCat:budgetCat};
+  if(shopEditId){
+    for(var i=0;i<shoppingItems.length;i++)if(shoppingItems[i].id===shopEditId){shoppingItems[i]=rec;break;}
+    // update expense if budgeted
+    if(inBudget){
+      for(var i=0;i<expenseItems.length;i++){
+        if(expenseItems[i].shopRef===shopEditId){
+          expenseItems[i].name=name;expenseItems[i].cat=budgetCat;
+          expenseItems[i].amt=(parseInt(price)||0)*qty;break;
+        }
+      }
+    } else {
+      expenseItems=expenseItems.filter(function(e){return e.shopRef!==shopEditId;});
+    }
+  } else {
+    shoppingItems.push(rec);
+    if(inBudget){
+      expenseItems.push({id:makeEiId(),shopRef:rec.id,name:name,cat:budgetCat,amt:(parseInt(price)||0)*qty,date:today(),note:'採購物資'});
+    }
+  }
+  save();closeShop();renderShopping();
+}
+
 function renderBudget(){
   var totalSpent=sumItems(budgetItems);
   var totalActual=sumItems(expenseItems);
@@ -622,6 +849,7 @@ function confirmDel(){
   if(deletingType==='todo')todos=todos.filter(function(x){return x.id!==deletingId;});
   else if(deletingType==='budget')budgetItems=budgetItems.filter(function(x){return x.id!==deletingId;});
   else if(deletingType==='expense')expenseItems=expenseItems.filter(function(x){return x.id!==deletingId;});
+  else if(deletingType==='shopping'){expenseItems=expenseItems.filter(function(x){return x.shopRef!==deletingId;});shoppingItems=shoppingItems.filter(function(x){return x.id!==deletingId;});}
   else{for(var i=0;i<listings.length;i++)if(listings[i].id===deletingId){pushLog('delete',listings[i].id,listings[i].address);break;}listings=listings.filter(function(x){return x.id!==deletingId;});}
   save();closeDel();renderMain();
 }
@@ -729,10 +957,11 @@ function downloadExport(){
 }
 
 
-document.getElementById('tab-list').addEventListener('click',function(){currentTab='list';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
-document.getElementById('tab-todo').addEventListener('click',function(){currentTab='todo';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
-document.getElementById('tab-budget').addEventListener('click',function(){currentTab='budget';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
-document.getElementById('tab-log').addEventListener('click',function(){currentTab='log';['tab-list','tab-todo','tab-budget','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+document.getElementById('tab-list').addEventListener('click',function(){currentTab='list';['tab-list','tab-todo','tab-budget','tab-shopping','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+document.getElementById('tab-todo').addEventListener('click',function(){currentTab='todo';['tab-list','tab-todo','tab-budget','tab-shopping','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+document.getElementById('tab-budget').addEventListener('click',function(){currentTab='budget';['tab-list','tab-todo','tab-budget','tab-shopping','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+document.getElementById('tab-shopping').addEventListener('click',function(){currentTab='shopping';['tab-list','tab-todo','tab-budget','tab-shopping','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
+document.getElementById('tab-log').addEventListener('click',function(){currentTab='log';['tab-list','tab-todo','tab-budget','tab-shopping','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
 
 document.getElementById('form-cancel').addEventListener('click',closeForm);
 document.getElementById('form-save').addEventListener('click',saveForm);
@@ -743,6 +972,11 @@ document.getElementById('budget-save').addEventListener('click',saveBudget);
 document.getElementById('expense-cancel').addEventListener('click',closeExpense);
 document.getElementById('expense-save').addEventListener('click',saveExpense);
 document.getElementById('del-cancel').addEventListener('click',closeDel);
+document.getElementById('shop-cancel').addEventListener('click',closeShop);
+document.getElementById('shop-save').addEventListener('click',saveShop);
+document.getElementById('shop-overlay').addEventListener('click',function(e){if(e.target===this)closeShop();});
+document.getElementById('sh-budget-chk').addEventListener('change',function(){document.getElementById('sh-budget-cat-fg').style.display=this.checked?'block':'none';});
+document.getElementById('sh-channel').addEventListener('change',function(){document.getElementById('sh-link-fg').style.display=this.value==='網購'?'block':'none';});
 document.getElementById('del-confirm').addEventListener('click',confirmDel);
 document.getElementById('export-close').addEventListener('click',closeExport);
 document.getElementById('export-overlay').addEventListener('click',function(e){if(e.target===this)closeExport();});
