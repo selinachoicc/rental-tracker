@@ -348,6 +348,17 @@ canvas{display:block;margin:0 auto}
         <option value="已購買">已購買</option>
         <option value="送貨中">送貨中</option>
         <option value="已送達">已送達</option>
+        <option value="舊居物品">舊居物品</option>
+      </select>
+    </div>
+    <div class="fg"></div>
+  </div>
+  <div class="fr2">
+    <div class="fg"><label>優先度</label>
+      <select id="sh-priority">
+        <option value="P1">P1（最優先，搬入前必須）</option>
+        <option value="P2">P2（搬入後盡快）</option>
+        <option value="P3">P3（遲些無妨）</option>
       </select>
     </div>
     <div class="fg"></div>
@@ -372,6 +383,36 @@ canvas{display:block;margin:0 auto}
   <div class="modal-acts">
     <button class="btn-outline" id="shop-cancel">取消</button>
     <button class="btn-nv" id="shop-save">新增物資</button>
+  </div>
+</div>
+</div>
+
+<!-- BUDGET EXPORT MODAL -->
+<div class="overlay" id="budget-export-overlay" style="display:none">
+<div class="modal" style="max-width:480px">
+  <div class="modal-title">匯出預算及開支</div>
+  <p style="font-size:13px;color:#5a5a78;margin-bottom:16px">選擇格式匯出，可直接貼係Chat入面分析。</p>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+    <button class="btn-nv" id="bexp-txt" style="text-align:left;padding:12px 16px">
+      <div style="font-weight:700">純文字</div>
+      <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">最易直接貼係Chat入面</div>
+    </button>
+    <button class="btn-nv" id="bexp-csv" style="text-align:left;padding:12px 16px">
+      <div style="font-weight:700">CSV</div>
+      <div style="font-size:11px;font-weight:400;opacity:.8;margin-top:2px">適合Excel / Google Sheets</div>
+    </button>
+  </div>
+  <div id="bexport-output" style="display:none">
+    <div style="font-size:12px;font-weight:700;color:#1B1F4B;margin-bottom:6px" id="bexport-label">輸出：</div>
+    <textarea id="bexport-textarea" style="width:100%;height:220px;padding:10px;border:2px solid #9496b8;border-radius:9px;font-size:11px;font-family:monospace;background:#f5f5fd;color:#0a0a1a;resize:vertical;outline:none" readonly></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-nv" id="bexp-copy" style="flex:1">複製到剪貼板</button>
+      <button class="btn-outline" id="bexp-download">下載檔案</button>
+    </div>
+    <div id="bexp-copy-confirm" style="font-size:12px;color:#1a6b3a;font-weight:700;margin-top:6px;display:none">✓ 已複製！</div>
+  </div>
+  <div class="modal-acts" style="margin-top:12px;padding-top:12px">
+    <button class="btn-outline" id="budget-export-close">關閉</button>
   </div>
 </div>
 </div>
@@ -425,7 +466,7 @@ var idCtr=100,todoCtr=200,biCtr=300,eiCtr=400,shCtr=500;
 var totalBudget=0;
 var currentTab='list',sortBy='id',editingId=null,deletingId=null,deletingType='rental';
 var todoEditId=null,todoFilterStatus='all',todoFilterCat='all',todoFilterSev='all',todoFilterOwner='all';
-var shopEditId=null,shopFilterCat='all',shopFilterStatus='all';
+var shopEditId=null,shopFilterCat='all',shopFilterStatus='all',shopFilterPriority='all';
 var budgetEditId=null,expenseEditId=null;
 var yn={lift:'?',flat:'?',wd:'?',furn:'?'};
 var furnItems=[],tdTags=[];
@@ -516,8 +557,9 @@ function toggleTodo(id){for(var i=0;i<todos.length;i++)if(todos[i].id===id){todo
 // ── BUDGET ──
 
 function renderShopping(){
-  var items=shoppingItems.slice();
+  var items=shoppingItems.slice().sort(function(a,b){var pa=parseInt((a.priority||'P2').slice(1)),pb=parseInt((b.priority||'P2').slice(1));return pa-pb;});
   if(shopFilterCat!=='all')items=items.filter(function(i){return i.cat===shopFilterCat;});
+  if(shopFilterPriority!=='all')items=items.filter(function(i){return (i.priority||'P2')===shopFilterPriority;});
   if(shopFilterStatus!=='all')items=items.filter(function(i){return (i.status||'選購中')===shopFilterStatus;});
   var total=0,budgeted=0,count=shoppingItems.length;
   for(var i=0;i<shoppingItems.length;i++){
@@ -538,7 +580,7 @@ function renderShopping(){
       '<label>類別：</label>'+
       '<select id="sf-shop-cat">'+cats.map(function(cat){return '<option value="'+cat+'"'+(shopFilterCat===cat?' selected':'')+'>'+( cat==='all'?'全部':cat)+'</option>';}).join('')+
       '</select>'+
-      '<label>狀態：</label>'+'<select id="sf-shop-status"><option value="all"'+(shopFilterStatus==="all"?' selected':'')+'>全部</option><option value="選購中"'+(shopFilterStatus==="選購中"?' selected':'')+'>選購中</option><option value="已購買"'+(shopFilterStatus==="已購買"?' selected':'')+'>已購買</option><option value="送貨中"'+(shopFilterStatus==="送貨中"?' selected':'')+'>送貨中</option><option value="已送達"'+(shopFilterStatus==="已送達"?' selected':'')+'>已送達</option></select>'+'<button class="btn-nv" id="btn-add-shop" style="margin-left:auto">＋ 新增物資</button>'+
+      '<label>優先度：</label>'+'<select id="sf-shop-pri"><option value="all"'+(shopFilterPriority==="all"?' selected':'')+'>全部</option><option value="P1"'+(shopFilterPriority==="P1"?' selected':'')+'>P1</option><option value="P2"'+(shopFilterPriority==="P2"?' selected':'')+'>P2</option><option value="P3"'+(shopFilterPriority==="P3"?' selected':'')+'>P3</option></select>'+'<label>狀態：</label>'+'<select id="sf-shop-status"><option value="all"'+(shopFilterStatus==="all"?' selected':'')+'>全部</option><option value="選購中"'+(shopFilterStatus==="選購中"?' selected':'')+'>選購中</option><option value="已購買"'+(shopFilterStatus==="已購買"?' selected':'')+'>已購買</option><option value="送貨中"'+(shopFilterStatus==="送貨中"?' selected':'')+'>送貨中</option><option value="已送達"'+(shopFilterStatus==="已送達"?' selected':'')+'>已送達</option></select>'+'<button class="btn-nv" id="btn-add-shop" style="margin-left:auto">＋ 新增物資</button>'+
     '</div>';
 
   if(!items.length){
@@ -559,7 +601,7 @@ function renderShopping(){
         '<div class="shop-price">'+fmt(total_price)+(it.qty>1?' ('+it.qty+'件 × '+fmt(it.price)+')':'')+'</div>'+
         '<div class="shop-meta">'+
           '<span class="shop-cat">'+it.cat+'</span>'+
-          '<span class="pill" style="background:#eee;color:var(--txt2)">'+it.channel+'</span>'+'<span class="pill" style="background:'+(it.status==="已送達"?'#c8ecd4':it.status==="已購買"?'#e6f4ec':it.status==="送貨中"?'#fff3cd':'#e8e9f3')+';color:'+(it.status==="已送達"||it.status==="已購買"?'#1a6b3a':it.status==="送貨中"?'#B7770D':'#5a5a78')+'">'+( it.status||'選購中')+'</span>'+
+          '<span class="pill" style="background:#eee;color:var(--txt2)">'+it.channel+'</span>'+'<span class="pill" style="background:'+(it.status==="已送達"?'#c8ecd4':it.status==="已購買"?'#e6f4ec':it.status==="送貨中"?'#fff3cd':it.status==="舊居物品"?'#e8e9f3':'#eee')+';color:'+(it.status==="已送達"||it.status==="已購買"?'#1a6b3a':it.status==="送貨中"?'#B7770D':it.status==="舊居物品"?'#2D3270':'#5a5a78')+'">'+( it.status||'選購中')+'</span>'+'<span class="pill" style="background:'+(it.priority==="P1"?'#ffd4d0':it.priority==="P2"?'#fff3cd':'#e8e9f3')+';color:'+(it.priority==="P1"?'#C0392B':it.priority==="P2"?'#B7770D':'#5a5a78')+';font-weight:700">'+(it.priority||'P2')+'</span>'+
         '</div>'+
         (it.size?'<div class="shop-detail">📐 '+it.size+'</div>':'')+
         (it.note?'<div class="shop-detail">📝 '+it.note+'</div>':'')+
@@ -575,6 +617,7 @@ function renderShopping(){
   document.getElementById('main').innerHTML=h;
 
   var fsc=document.getElementById('sf-shop-cat');if(fsc)fsc.addEventListener('change',function(){shopFilterCat=this.value;renderShopping();});
+  var fsp=document.getElementById('sf-shop-pri');if(fsp)fsp.addEventListener('change',function(){shopFilterPriority=this.value;renderShopping();});
   var fss=document.getElementById('sf-shop-status');if(fss)fss.addEventListener('change',function(){shopFilterStatus=this.value;renderShopping();});
   var bas=document.getElementById('btn-add-shop');if(bas)bas.addEventListener('click',function(){openShopForm(null);});
   var base=document.getElementById('btn-add-shop-empty');if(base)base.addEventListener('click',function(){openShopForm(null);});
@@ -620,6 +663,7 @@ function openShopForm(id){
   document.getElementById('sh-link').value=it?it.link||'':'';
   document.getElementById('sh-note').value=it?it.note||'':'';
   document.getElementById('sh-status').value=it?it.status||'選購中':'選購中';
+  document.getElementById('sh-priority').value=it?it.priority||'P2':'P2';
   document.getElementById('sh-budget-chk').checked=it?!!it.inBudget:false;
   document.getElementById('sh-budget-cat').value=it?it.budgetCat||'傢俬':'傢俬';
   document.getElementById('sh-budget-cat-fg').style.display=(it&&it.inBudget)?'block':'none';
@@ -641,9 +685,10 @@ function saveShop(){
   var link=document.getElementById('sh-link').value.trim();
   var note=document.getElementById('sh-note').value.trim();
   var status=document.getElementById('sh-status').value;
+  var priority=document.getElementById('sh-priority').value;
   var inBudget=document.getElementById('sh-budget-chk').checked;
   var budgetCat=document.getElementById('sh-budget-cat').value;
-  var rec={id:shopEditId||makeShId(),name:name,cat:cat,customCat:customCat,price:price,qty:qty,size:size,channel:channel,link:link,note:note,status:status,inBudget:inBudget,budgetCat:budgetCat};
+  var rec={id:shopEditId||makeShId(),name:name,cat:cat,customCat:customCat,price:price,qty:qty,size:size,channel:channel,link:link,note:note,status:status,priority:priority,inBudget:inBudget,budgetCat:budgetCat};
   if(shopEditId){
     for(var i=0;i<shoppingItems.length;i++)if(shoppingItems[i].id===shopEditId){shoppingItems[i]=rec;break;}
     // update expense if budgeted
@@ -682,7 +727,7 @@ function renderBudget(){
     '</div>';
 
   // total budget editor
-  h+='<div class="budget-total-bar">'+
+  h+='<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn-outline" id="btn-budget-export">⬇ 匯出預算</button></div>'+'<div class="budget-total-bar">'+
     '<span class="budget-total-label">總預算：</span>'+
     '<div class="budget-total-edit">'+
       '<input id="total-budget-input" type="number" value="'+(totalBudget||'')+'" placeholder="輸入總預算"/>'+
@@ -735,6 +780,7 @@ function renderBudget(){
 
   // events
   var sbi=document.getElementById('btn-set-budget');if(sbi)sbi.addEventListener('click',function(){var v=parseInt(document.getElementById('total-budget-input').value)||0;totalBudget=v;save();renderMain();});
+  var bbe=document.getElementById('btn-budget-export');if(bbe)bbe.addEventListener('click',openBudgetExport);
   var abi=document.getElementById('btn-add-bi');if(abi)abi.addEventListener('click',function(){openBudgetForm(null);});
   var aei=document.getElementById('btn-add-ei');if(aei)aei.addEventListener('click',function(){openExpenseForm(null);});
   var bies=document.querySelectorAll('[data-bi-edit]');for(var i=0;i<bies.length;i++)(function(b){b.addEventListener('click',function(){openBudgetForm(b.getAttribute('data-bi-edit'));});})(bies[i]);
@@ -972,6 +1018,106 @@ function downloadExport(){
 }
 
 
+
+// ── BUDGET EXPORT ──
+var bExportFormat='';
+function openBudgetExport(){
+  document.getElementById('budget-export-overlay').style.display='flex';
+  document.getElementById('bexport-output').style.display='none';
+  document.getElementById('bexp-copy-confirm').style.display='none';
+}
+function closeBudgetExport(){document.getElementById('budget-export-overlay').style.display='none';}
+
+function doBudgetExportTXT(){
+  bExportFormat='txt';
+  var NL=String.fromCharCode(10);
+  var D='$';
+  var lines=[];
+  lines.push('=== 預算及開支報告 ===');
+  lines.push('匯出時間：'+makeTs());
+  lines.push('');
+  var totalSpent=0;for(var i=0;i<budgetItems.length;i++)totalSpent+=parseInt(budgetItems[i].amt)||0;
+  var totalActual=0;for(var i=0;i<expenseItems.length;i++)totalActual+=parseInt(expenseItems[i].amt)||0;
+  lines.push('總預算：HK'+D+(totalBudget?totalBudget.toLocaleString():'未設定'));
+  lines.push('已分配預算：HK'+D+totalSpent.toLocaleString());
+  lines.push('剩餘預算：HK'+D+(totalBudget-totalSpent).toLocaleString());
+  lines.push('實際總開支：HK'+D+totalActual.toLocaleString());
+  if(totalBudget>0)lines.push('預算使用率：'+Math.round(totalActual/totalBudget*100)+'%');
+  lines.push('');
+  lines.push('--- 預算細項 ('+budgetItems.length+'項) ---');
+  for(var i=0;i<budgetItems.length;i++){
+    var it=budgetItems[i];
+    lines.push('- '+it.name+' ['+it.cat+'] HK'+D+(parseInt(it.amt)||0).toLocaleString()+(it.note?' ('+it.note+')':''));
+  }
+  lines.push('');
+  lines.push('--- 實際開支記錄 ('+expenseItems.length+'筆) ---');
+  for(var i=0;i<expenseItems.length;i++){
+    var it=expenseItems[i];
+    lines.push('- '+(it.date?it.date+' ':'')+it.name+' ['+it.cat+'] HK'+D+(parseInt(it.amt)||0).toLocaleString()+(it.note&&it.note!=='採購物資'?' ('+it.note+')':''));
+  }
+  showBudgetExportOutput('純文字報告',lines.join(NL));
+}
+
+function doBudgetExportCSV(){
+  bExportFormat='csv';
+  var NL=String.fromCharCode(10);
+  function esc(s){return '"'+((s||'').replace(/"/g,'""'))+'"';}
+  var lines=[];
+  lines.push('=== 預算細項 ===');
+  lines.push(['項目名稱','分類','金額','備注'].join(','));
+  var totalSpent=0;
+  for(var i=0;i<budgetItems.length;i++){
+    var it=budgetItems[i];
+    var amt=parseInt(it.amt)||0;
+    totalSpent+=amt;
+    lines.push([esc(it.name),esc(it.cat),amt,esc(it.note)].join(','));
+  }
+  lines.push(['合計','',totalSpent,''].join(','));
+  lines.push('');
+  lines.push('=== 實際開支記錄 ===');
+  lines.push(['日期','項目名稱','分類','金額','備注'].join(','));
+  var totalActual=0;
+  for(var i=0;i<expenseItems.length;i++){
+    var it=expenseItems[i];
+    var amt=parseInt(it.amt)||0;
+    totalActual+=amt;
+    lines.push([esc(it.date),esc(it.name),esc(it.cat),amt,esc(it.note)].join(','));
+  }
+  lines.push(['合計','','',totalActual,''].join(','));
+  lines.push('');
+  lines.push('=== 總覽 ===');
+  lines.push(['總預算','已分配','剩餘','實際開支'].join(','));
+  lines.push([totalBudget||0,totalSpent,(totalBudget||0)-totalSpent,totalActual].join(','));
+  showBudgetExportOutput('CSV',lines.join(NL));
+}
+
+function showBudgetExportOutput(label,text){
+  document.getElementById('bexport-label').textContent=label;
+  document.getElementById('bexport-textarea').value=text;
+  document.getElementById('bexport-output').style.display='block';
+  document.getElementById('bexp-copy-confirm').style.display='none';
+}
+
+function copyBudgetExport(){
+  var ta=document.getElementById('bexport-textarea');
+  ta.select();ta.setSelectionRange(0,99999);
+  try{document.execCommand('copy');}catch(e){if(navigator.clipboard)navigator.clipboard.writeText(ta.value);}
+  document.getElementById('bexp-copy-confirm').style.display='block';
+  setTimeout(function(){document.getElementById('bexp-copy-confirm').style.display='none';},2000);
+}
+
+function downloadBudgetExport(){
+  var text=document.getElementById('bexport-textarea').value;
+  var ext=bExportFormat==='csv'?'csv':'txt';
+  var mime=bExportFormat==='csv'?'text/csv':'text/plain';
+  var blob=new Blob(['﻿'+text],{type:mime+';charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download='budget_export.'+ext;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
 document.getElementById('tab-list').addEventListener('click',function(){currentTab='list';['tab-list','tab-todo','tab-budget','tab-shopping','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
 document.getElementById('tab-todo').addEventListener('click',function(){currentTab='todo';['tab-list','tab-todo','tab-budget','tab-shopping','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
 document.getElementById('tab-budget').addEventListener('click',function(){currentTab='budget';['tab-list','tab-todo','tab-budget','tab-shopping','tab-log'].forEach(function(id){document.getElementById(id).className='tab';});this.className='tab on';renderMain();});
@@ -983,6 +1129,12 @@ document.getElementById('form-save').addEventListener('click',saveForm);
 document.getElementById('todo-cancel').addEventListener('click',closeTodo);
 document.getElementById('todo-save').addEventListener('click',saveTodo);
 document.getElementById('budget-cancel').addEventListener('click',closeBudget);
+document.getElementById('budget-export-close').addEventListener('click',closeBudgetExport);
+document.getElementById('budget-export-overlay').addEventListener('click',function(e){if(e.target===this)closeBudgetExport();});
+document.getElementById('bexp-txt').addEventListener('click',doBudgetExportTXT);
+document.getElementById('bexp-csv').addEventListener('click',doBudgetExportCSV);
+document.getElementById('bexp-copy').addEventListener('click',copyBudgetExport);
+document.getElementById('bexp-download').addEventListener('click',downloadBudgetExport);
 document.getElementById('budget-save').addEventListener('click',saveBudget);
 document.getElementById('expense-cancel').addEventListener('click',closeExpense);
 document.getElementById('expense-save').addEventListener('click',saveExpense);
